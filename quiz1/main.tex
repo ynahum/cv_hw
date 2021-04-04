@@ -2,44 +2,28 @@
 
 \title{Quiz 1}
 
-\author{Yair Nahum (id: 034462796)\\and\\Daniel Teitelman (id: 207734088)}
+\author{Yair Nahum (id: 034462796)\\And\\Daniel Teitelman (id: 207734088)}
 
 \begin{document}
 
 \maketitle
 
 
+(i) 
 
+when considering a diagonal matrix, we need to approximate that all pixels illuminations $x$ are roughly the same and we treat all the same w/o relating to the actual pixels values.
 
-\exercise*
-Each exercise (except the first) starts on a new page. You can disable this behavior using the starred version of the command: \verb|\exercise*|.
+Since all cameras get the same scene inputs, the averages and max values of inputs are the same. We just need to convert the values to the same dynamic range for each color component.
 
-Now, let's consider a mathematical example.
+Meaning, we assume $r(\lambda , x)$ is constant relative to $x \hspace{5pt} ( r(\lambda,x)\approx r(\lambda) )$.
 
-\begin{definition}
-    The \emph{standard inner product} of two vectors $\vec x, \vec y \in \R^n$ is defined as
-    \[
-        \vec x * \vec y \coloneqq x_1 y_1 + \dots + x_n y_n.
-    \]
-\end{definition}
+According to the per color channel sensor response calculation:
+$$I_c=\int_{\lambda} \Phi(\lambda)f_c(\lambda)d\lambda=\int_{\lambda} e(\lambda)r(\lambda)f_c(\lambda)d\lambda$$
+When,\\
+$e(\lambda) \equiv \text{ the illuminant spectrum} $\\
+$r(\lambda) \equiv \text{ material reflectance} $\\
+$\Phi(\lambda) = e(\lambda)r(\lambda) \equiv \text{ light SPD (Spectral Power Distribution) that is received back from the surface} $\\
+$f_c(\lambda) \equiv \text{ sensor SSF (Spectral Sensitivity Function) per color channel } c$
 
-Next to definitions, environments for theorems and lemmas are included as well. Furthermore, you can easily define your own with the \verb|\NewTheorem| command.
-
-Note that \texttt{*} can be used instead of \verb|\cdot|, and \verb|\R| instead of \verb|\mathbb{R}|. (For a normal asterisk, use \verb|\ast|.) Of course, there are also macros for the natural numbers etc. Commands such as \verb|\abs{}| and \verb|\set{}| can be used to create (scaled) delimiters. For example,
-\[
-    \abs{\frac{1}{1 - \lambda h}} \le 1
-    \qquad\text{and}\qquad
-    \bigcup_{i=1}^n \; \set{z \in \C \mid \abs*{z - a_{ii}} \le {\sum\nolimits_{i \ne j}} \abs*{a_{ij}}}.
-\]
-The starred version of these commands disables the auto-scaling.
-
-\exercise[Rec--2.1]
-Optionally, you can fully customize the numbering of each exercise \dots
-
-\setcounter{exercise}{7}
-\exercise*
-\dots{} or skip a few, using the \verb|\setcounter{exercise}{x}| command.
-
-For more information, refer to \url{https://github.com/gijs-pennings/latex-homework}.
 
 \end{document}

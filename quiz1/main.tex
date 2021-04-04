@@ -19,11 +19,62 @@ Meaning, we assume $r(\lambda , x)$ is constant relative to $x \hspace{5pt} ( r(
 
 According to the per color channel sensor response calculation:
 $$I_c=\int_{\lambda} \Phi(\lambda)f_c(\lambda)d\lambda=\int_{\lambda} e(\lambda)r(\lambda)f_c(\lambda)d\lambda$$
-When,\\
+When:\\
 $e(\lambda) \equiv \text{ the illuminant spectrum} $\\
 $r(\lambda) \equiv \text{ material reflectance} $\\
 $\Phi(\lambda) = e(\lambda)r(\lambda) \equiv \text{ light SPD (Spectral Power Distribution) that is received back from the surface} $\\
 $f_c(\lambda) \equiv \text{ sensor SSF (Spectral Sensitivity Function) per color channel } c$
+
+We define a diagonal transformation matrix from camera i to camera j as follows:
+
+$$T_{i\rightarrow j} \equiv
+\begin{pmatrix} 
+    S_b & 0 & 0 \\ 
+    0 & S_g & 0 \\ 
+    0 & 0 & S_r 
+\end{pmatrix}$$
+
+It converts a pixel vector 3x1 $\begin{pmatrix} R_i\\G_i\\B_i \end{pmatrix}$ as follows:
+$$\begin{pmatrix} R_j\\G_j\\B_j \end{pmatrix} = T_{i\rightarrow j}=
+\begin{pmatrix} 
+    S_b & 0 & 0 \\ 
+    0 & S_g & 0 \\ 
+    0 & 0 & S_r 
+\end{pmatrix}\begin{pmatrix} R_i\\G_i\\B_i \end{pmatrix}$$
+
+Since the $e(\lambda)$ is assumed to be built as spikes (of 0.8, but it doesn't really matter as all cameras get the same), we can approximate $I_c$ for each camera.
+
+Note that the spikes are at the mean of the Gaussians except for camera 3.
+
+$$I_{1,b}=0.8*1, I_{1,g}=0.8*1, I_{1,r}=0.8*1$$
+$$I_{2,b}=0.8*0.5, I_{2,g}=0.8*1, I_{2,r}=0.8*1$$
+$$I_{3,b}=0.8*1, I_{3,g}=0.8*1, I_{3,r}=0.8*\exp{(-\frac{(650-600)^2}{2*(70)^2})}$$
+
+Therefore, the diagonal transformation matrices are as follows:
+
+$$T_{2\rightarrow1}= \begin{pmatrix} 
+    2 & 0 & 0 \\ 
+    0 & 1 & 0 \\ 
+    0 & 0 & 1 
+\end{pmatrix}$$
+$$T_{3\rightarrow1}= \begin{pmatrix} 
+    1 & 0 & 0 \\ 
+    0 & 1 & 0 \\ 
+    0 & 0 & \exp{(\frac{(650-600)^2}{2*(70)^2})} 
+\end{pmatrix}$$
+
+(ii)
+
+If we don't assume the naive assumption that all material reflectances are the same. Meaning, we have $r(\lambda,x)$.
+
+Then, we need to find a 3x3 transformation matrix that minimizes the difference (squared) between pixels perceived by camera 1 and our camera.
+
+We define $X_i$ as the $n$ pixels matrix of camera $i$ when $X_i\in \mathbb{R}^{3xn}$\\
+Thus, we have the following optimization problem:
+$$min_{T_{i\rightarrow j}}{\begin{Vmatrix}X_j-T_{i\rightarrow j}X_i\end{Vmatrix}}_F^2$$
+
+We can solve it directly and analytically using SVD decompositions of $X_i$ and $X_j$ and calculating gradient relative to transformation matrix and compare to 0.
+
 
 
 \end{document}

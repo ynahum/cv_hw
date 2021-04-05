@@ -4,6 +4,10 @@
 
 \author{Yair Nahum (id: 034462796)\\And\\Daniel Teitelman (id: 207734088)}
 
+\usepackage{amsmath}
+
+\DeclareMathOperator*{\minimize}{minimize}
+
 \begin{document}
 
 \maketitle
@@ -71,10 +75,24 @@ Then, we need to find a 3x3 transformation matrix that minimizes the difference 
 
 We define $X_i$ as the $n$ pixels matrix of camera $i$ when $X_i\in \mathbb{R}^{3xn}$\\
 Thus, we have the following optimization problem:
-$$min_{T_{i\rightarrow j}}{\begin{Vmatrix}X_j-T_{i\rightarrow j}X_i\end{Vmatrix}}_F^2$$
+$$
+\minimize_{T_{i\rightarrow j}}
+\frac{1}{2}{\begin{Vmatrix}X_j-T_{i\rightarrow j}X_i\end{Vmatrix}}_F^2$$
 
-We can solve it directly and analytically using SVD decompositions of $X_i$ and $X_j$ and calculating gradient relative to transformation matrix and compare to 0.
+We can solve it directly and analytically using SVD decompositions of $X_i$ and $X_j$ and calculating gradient relative to transformation matrix and compare to 0 or by direct gradient.
 
+We can calculate the differential of the above expression:
+$$df(T)=d(\frac{1}{2}{\begin{Vmatrix}X_j-TX_i\end{Vmatrix}}_F^2)=d(\frac{1}{2}Tr\{(X_j-TX_i)^T(X_j-TX_i)\})=$$
+$$\frac{1}{2}d(Tr\{(X_j-TX_i)^T(X_j-TX_i)\})=\frac{1}{2}Tr\{d((X_j-TX_i)^T(X_j-TX_i))\}$$
+$$=\frac{1}{2}Tr\{d(X_j-TX_i)^T(X_j-TX_i) + (X_j-TX_i)^Td(X_j-TX_i)\}=$$
+$$\frac{1}{2}Tr\{(-dTX_i)^T(X_j-TX_i) + (X_j-TX_i)^T(-dTX_i)\}=$$
+$$\frac{1}{2}\{Tr\{(-dTX_i)^T(X_j-TX_i)\} + Tr\{ (X_j-TX_i)^T(-dTX_i)\}\}=$$
+$$\frac{1}{2}\{Tr\{(X_j-TX_i)^T(-dTX_i)\} + Tr\{ (X_j-TX_i)^T(-dTX_i)\}\}= $$
+$$Tr\{(X_j-TX_i)^T(-dTX_i)\}= Tr\{-X_i(X_j-TX_i)^TdT\}= $$
+$$Tr\{(-(X_j-TX_i)X_i^T)^TdT\}= \langle -(X_j-TX_i)X_i^T,dT \rangle $$
+$$\Rightarrow \nabla_{T}f(T) = -(X_j-TX_i)X_i^T $$
 
-
+We compare the gradient to 0 and get the trivial condition $X_j=TX_i$
+We can isolate T:
+$$T=X_jX_i^T(X_iX_i^T)^{-1}$$
 \end{document}

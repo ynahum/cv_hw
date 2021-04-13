@@ -111,7 +111,7 @@ def computePrincipalCurvature(DoGPyramid):
         Dxy = cv2.Sobel(DoGPyramid[i,:,:],cv2.CV_64F,1,1)
         TrH = Dxx + Dyy
         DetH = np.multiply(Dxx,Dyy) - np.multiply(Dxy,Dxy)
-        epsilon = np.power(10, -10)
+        epsilon = 10 ** (-7)
         # we add epsilon to avoid division by zero when hessian is not invertible (det = 0)
         R = np.abs(np.divide(np.power(TrH,2),DetH + epsilon))
         PrincipalCurvature.append(R)

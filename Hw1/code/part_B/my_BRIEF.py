@@ -16,11 +16,6 @@ def makeTestPattern(patchWidth, nbits):
     return compareX, compareY
 
 
-patchWidth = 9
-nbits = 256
-compareX, compareY = makeTestPattern(patchWidth, nbits)
-#print(f"{np.shape(compareX)}")
-scipy.io.savemat("testPattern.mat", {'compareX':compareX, 'compareY':compareY})
 
 def computeBrief(im, GaussianPyramid, locsDoG, k, levels, patchWidth, compareX, compareY):
     """

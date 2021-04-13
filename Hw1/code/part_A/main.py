@@ -5,6 +5,7 @@ import cv2
 
 # %% Global parameters
 
+data_path = "../../data"
 sigma0 = 1
 k = np.sqrt(2)
 levels = np.array([-1,0,2,3,4])
@@ -13,7 +14,7 @@ th_r = 12
 
 # %% 1.1 Load chickenbroth image
 
-im = cv2.imread('../../data/model_chickenbroth.jpg')
+im = cv2.imread(f"{data_path}/model_chickenbroth.jpg")
 plt.imshow(cv2.cvtColor(im, cv2.COLOR_BGR2RGB))
 _ = plt.axis('off')
 plt.show()
@@ -71,7 +72,7 @@ print('Locs DoG shape: ' + str(locsDoG.shape))
 # %% 1.6 Testing it
 
 # %% Load image model_chickenbroth and test feature extractor
-im = cv2.imread('../../data/model_chickenbroth.jpg')
+im = cv2.imread(f"{data_path}/model_chickenbroth.jpg")
 plt.figure()
 plt.imshow(cv2.cvtColor(im, cv2.COLOR_BGR2RGB))
 _ = plt.axis('off')
@@ -84,7 +85,7 @@ runDoGdetectorWithDifferentParameters(im,sigma0,k,levels)
 
 # %% Load image chickenbroth_04 and test feature extractor
 
-im = cv2.imread('../../data/chickenbroth_04.jpg')
+im = cv2.imread(f"{data_path}/chickenbroth_04.jpg")
 plt.figure()
 plt.imshow(cv2.cvtColor(im, cv2.COLOR_BGR2RGB))
 _ = plt.axis('off')
@@ -97,7 +98,7 @@ runDoGdetectorWithDifferentParameters(im,sigma0,k,levels)
 
 # %% Load image OurImage and test feature extractor
 
-im = cv2.imread('../../data/my_data/OurImage.jpeg')
+im = cv2.imread(f"{data_path}/my_data/OurImage.jpeg")
 plt.figure()
 plt.imshow(cv2.cvtColor(im, cv2.COLOR_BGR2RGB))
 _ = plt.axis('off')

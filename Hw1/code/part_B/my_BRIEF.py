@@ -2,7 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
-import scipy.io
+
 #import my_keypoint_det
 
 def makeTestPattern(patchWidth, nbits):

@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 import scipy.io
+#import my_keypoint_det
 
 def makeTestPattern(patchWidth, nbits):
     """
@@ -21,5 +22,12 @@ compareX, compareY = makeTestPattern(patchWidth, nbits)
 #print(f"{np.shape(compareX)}")
 scipy.io.savemat("testPattern.mat", {'compareX':compareX, 'compareY':compareY})
 
+def computeBrief(im, GaussianPyramid, locsDoG, k, levels, patchWidth, compareX, compareY):
+    """
+    Your code here
+    """
+    print(f'GaussianPyramid.shape {GaussianPyramid.shape}')
+    locs = locsDoG[:,:]
+    return locs, desc
 
 

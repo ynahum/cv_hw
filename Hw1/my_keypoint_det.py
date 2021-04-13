@@ -23,6 +23,7 @@ th_r = 12
 im = cv2.imread('data/model_chickenbroth.jpg')
 plt.imshow(cv2.cvtColor(im, cv2.COLOR_BGR2RGB))
 _ = plt.axis('off')
+plt.show()
 
 # %% 1.2 Gaussian pyramid
 
@@ -41,6 +42,7 @@ def displayPyramid(pyramid):
     plt.figure(figsize=(16,5))
     plt.imshow(np.hstack(pyramid), cmap='gray')
     plt.axis('off')
+    plt.show()
     
 # %% 1.2 Preprocess image
 
@@ -125,7 +127,9 @@ for i in range(len(PrincipalCurvature)):
     plt.imshow(PrincipalCurvature[i,:,:],cmap='gray')
     plt.title('Edge suppresion at level: ' + str(i + 1))
     plt.axis('off')
-    
+
+plt.show()
+
 # %% 1.4 Visualize edge suppresion - with thresholding
 
 plt.figure()
@@ -134,7 +138,9 @@ for i in range(len(PrincipalCurvature)):
     plt.imshow(cv2.threshold(PrincipalCurvature[i,:,:],th_r,1,cv2.THRESH_BINARY_INV)[1],cmap='gray')
     plt.title('Edge suppresion at level: ' + str(i + 1))
     plt.axis('off')
-    
+
+plt.show()
+
 # %% 1.5 Get local extrema
 
 def getLocalExtrema(DoGPyramid, DoGLevels, PrincipalCurvature,th_contrast, th_r):
@@ -205,19 +211,22 @@ def runDoGdetectorWithDifferentParameters(im,sigma0,k,levels):
     th_contrast=[0.03,0.015,0.005,0.03,0.03]
     plt.figure()
     for i in range(len(th_r)):
-        plt.subplot(1,5,i+1)
+        plt.subplot(5,1,i+1)
         locsDoG, GaussianPyramid = DoGdetector(im, sigma0, k, levels, th_contrast[i], th_r[i])
         im_with_detector = np.copy(im)
         im_with_detector[np.int64(locsDoG[:,1]),np.int64(locsDoG[:,0])] = 1
         plt.imshow(im_with_detector,cmap = 'gray')
         plt.title('$Th_r = $' + str(th_r[i]) + ' and $ Th_{contrast} = $' + str(th_contrast[i]))
         plt.axis('off')
+    plt.show()
 
 # %% Load image model_chickenbroth and test feature extractor
 im = cv2.imread('data/model_chickenbroth.jpg')
 plt.figure()
 plt.imshow(cv2.cvtColor(im, cv2.COLOR_BGR2RGB))
 _ = plt.axis('off')
+plt.show()
+
 im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
 im = im/255
 
@@ -229,6 +238,8 @@ im = cv2.imread('data/chickenbroth_04.jpg')
 plt.figure()
 plt.imshow(cv2.cvtColor(im, cv2.COLOR_BGR2RGB))
 _ = plt.axis('off')
+plt.show()
+
 im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
 im = im/255
 
@@ -240,6 +251,7 @@ im = cv2.imread('ImageResults/OurImage.jpeg')
 plt.figure()
 plt.imshow(cv2.cvtColor(im, cv2.COLOR_BGR2RGB))
 _ = plt.axis('off')
+plt.show()
 im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
 im = im/255
 

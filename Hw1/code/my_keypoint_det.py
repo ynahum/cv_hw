@@ -20,7 +20,7 @@ th_r = 12
 
 # %% 1.1 Load chickenbroth image
 
-im = cv2.imread('data/model_chickenbroth.jpg')
+im = cv2.imread('../data/model_chickenbroth.jpg')
 plt.imshow(cv2.cvtColor(im, cv2.COLOR_BGR2RGB))
 _ = plt.axis('off')
 plt.show()
@@ -223,7 +223,7 @@ def runDoGdetectorWithDifferentParameters(im,sigma0,k,levels):
     plt.show()
 
 # %% Load image model_chickenbroth and test feature extractor
-im = cv2.imread('data/model_chickenbroth.jpg')
+im = cv2.imread('../data/model_chickenbroth.jpg')
 plt.figure()
 plt.imshow(cv2.cvtColor(im, cv2.COLOR_BGR2RGB))
 _ = plt.axis('off')
@@ -236,7 +236,7 @@ runDoGdetectorWithDifferentParameters(im,sigma0,k,levels)
 
 # %% Load image chickenbroth_04 and test feature extractor
 
-im = cv2.imread('data/chickenbroth_04.jpg')
+im = cv2.imread('../data/chickenbroth_04.jpg')
 plt.figure()
 plt.imshow(cv2.cvtColor(im, cv2.COLOR_BGR2RGB))
 _ = plt.axis('off')
@@ -249,7 +249,7 @@ runDoGdetectorWithDifferentParameters(im,sigma0,k,levels)
 
 # %% Load image OurImage and test feature extractor
 
-im = cv2.imread('ImageResults/OurImage.jpeg')
+im = cv2.imread('../my_data/OurImage.jpeg')
 plt.figure()
 plt.imshow(cv2.cvtColor(im, cv2.COLOR_BGR2RGB))
 _ = plt.axis('off')

@@ -160,13 +160,14 @@ def runDoGdetectorWithDifferentParameters(im,sigma0,k,levels):
     th_contrast=[0.03,0.015,0.005,0.03,0.03]
     plt.figure()
     for i in range(len(th_r)):
-        plt.subplot(5,1,i+1)
+        ax = plt.subplot(1,5,i+1)
         locsDoG, GaussianPyramid = DoGdetector(im, sigma0, k, levels, th_contrast[i], th_r[i])
-        im_with_detector = np.copy(im)
-        im_with_detector[np.int64(locsDoG[:,1]),np.int64(locsDoG[:,0])] = 1
-        plt.imshow(im_with_detector,cmap = 'gray')
+        plt.imshow(im,cmap = 'gray')
         plt.title('$Th_r = $' + str(th_r[i]) + ' and $ Th_{contrast} = $' + str(th_contrast[i]))
         plt.axis('off')
+        for col, row, lev in locsDoG:
+          currCircle = plt.Circle((col, row), radius=lev+1, color='r', fill=False)
+          ax.add_artist(currCircle)
     plt.show()
 
 

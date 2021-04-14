@@ -86,6 +86,7 @@ def computePrincipalCurvature(DoGPyramid):
         R = np.abs(np.divide(np.power(TrH,2),DetH + epsilon))
         PrincipalCurvature.append(R)
     PrincipalCurvature = np.stack(PrincipalCurvature)
+    PrincipalCurvature = np.abs(PrincipalCurvature)
     return PrincipalCurvature
 
 
@@ -109,15 +110,20 @@ def getLocalExtrema(DoGPyramid, DoGLevels, PrincipalCurvature,th_contrast, th_r)
     """
     Your code here
     """
-    locsDoGMatrix = 1
-    for i in range(len(DoGLevels)):
-        DoGPyramidLevelTh = cv2.threshold(np.abs(DoGPyramid[i,:,:]),th_contrast,1,cv2.THRESH_BINARY)[1]
-        PrincipalCurvatureLevelTh = cv2.threshold(PrincipalCurvature[i,:,:],th_r,1,cv2.THRESH_TOZERO_INV)[1]
-        localExtremaMatrix = np.multiply(DoGPyramidLevelTh,PrincipalCurvatureLevelTh)
-        locsDoGMatrix = np.multiply(locsDoGMatrix,localExtremaMatrix)
-    locsDoG = np.where(locsDoGMatrix != 0)
-    locsDoGValue = locsDoGMatrix[locsDoG]
-    locsDoG = np.transpose(np.array([locsDoG[1],locsDoG[0], locsDoGValue]))
+    mask = (np.abs(DoGPyramid) > th_contrast) & (PrincipalCurvature < th_r)
+    maskInd = np.where(mask)
+    lvlMax = len(mask)-1
+    rows = mask.shape[1]; cols = mask.shape[2]
+    nSize = 1 # Neighboorhod size
+    locsDoG = []
+    for lvlInd, r, c in zip(maskInd[0],maskInd[1],maskInd[2]):
+        lvlPrev = np.max([0,lvlInd-nSize]); lvlNext = np.min([lvlMax + 1,lvlInd + nSize + 1]);
+        rCurMin = np.max([0, r-nSize]); rCurMax = np.min([rows, r + nSize + 1]);
+        cCurMin = np.max([0, c-nSize]); cCurMax = np.min([cols, c + nSize + 1]);
+        curNeighborhood =  DoGPyramid[lvlPrev:lvlNext,rCurMin:rCurMax,cCurMin:cCurMax]
+        if DoGPyramid[lvlInd,r,c] == np.min(curNeighborhood) or  DoGPyramid[lvlInd,r,c] == np.max(curNeighborhood):
+            locsDoG.append(np.array([c,r, lvlInd]))
+    locsDoG = np.array(locsDoG)
     return locsDoG
 
 

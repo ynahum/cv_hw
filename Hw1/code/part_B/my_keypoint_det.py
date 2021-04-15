@@ -86,6 +86,7 @@ def computePrincipalCurvature(DoGPyramid):
         R = np.abs(np.divide(np.power(TrH,2),DetH + epsilon))
         PrincipalCurvature.append(R)
     PrincipalCurvature = np.stack(PrincipalCurvature)
+    PrincipalCurvature = np.abs(PrincipalCurvature)
     return PrincipalCurvature
 
 
@@ -109,15 +110,24 @@ def getLocalExtrema(DoGPyramid, DoGLevels, PrincipalCurvature,th_contrast, th_r)
     """
     Your code here
     """
-    locsDoGMatrix = 1
-    for i in range(len(DoGLevels)):
-        DoGPyramidLevelTh = cv2.threshold(np.abs(DoGPyramid[i,:,:]),th_contrast,1,cv2.THRESH_BINARY)[1]
-        PrincipalCurvatureLevelTh = cv2.threshold(PrincipalCurvature[i,:,:],th_r,1,cv2.THRESH_TOZERO_INV)[1]
-        localExtremaMatrix = np.multiply(DoGPyramidLevelTh,PrincipalCurvatureLevelTh)
-        locsDoGMatrix = np.multiply(locsDoGMatrix,localExtremaMatrix)
-    locsDoG = np.where(locsDoGMatrix != 0)
-    locsDoGValue = locsDoGMatrix[locsDoG]
-    locsDoG = np.transpose(np.array([locsDoG[1],locsDoG[0], locsDoGValue]))
+    mask = (np.abs(DoGPyramid) > th_contrast) & (PrincipalCurvature < th_r)
+    maskInd = np.where(mask)
+    lvl_max = PrincipalCurvature.shape[0] - 1
+    rows = PrincipalCurvature.shape[1]
+    cols = PrincipalCurvature.shape[2]
+    n_size = 1 # Neighboorhod size
+    locsDoG = []
+    for lvl_ind, row, col in zip(maskInd[0],maskInd[1],maskInd[2]):
+        lvl_prev = np.max([0,lvl_ind-n_size])
+        lvl_next = np.min([lvl_max + 1,lvl_ind + n_size + 1])
+        row_cur_min = np.max([0, row-n_size])
+        row_cur_max = np.min([rows, row + n_size + 1])
+        col_cur_min = np.max([0, col-n_size])
+        col_cur_max = np.min([cols, col + n_size + 1])
+        curNeighborhood =  DoGPyramid[lvl_prev:lvl_next, row_cur_min:row_cur_max, col_cur_min:col_cur_max]
+        if DoGPyramid[lvl_ind, row, col] == np.min(curNeighborhood) or DoGPyramid[lvl_ind, row, col] == np.max(curNeighborhood):
+            locsDoG.append(np.array([col, row, lvl_ind]))
+    locsDoG = np.array(locsDoG)
     return locsDoG
 
 
@@ -154,13 +164,14 @@ def runDoGdetectorWithDifferentParameters(im,sigma0,k,levels):
     th_contrast=[0.03,0.015,0.005,0.03,0.03]
     plt.figure()
     for i in range(len(th_r)):
-        plt.subplot(5,1,i+1)
+        ax = plt.subplot(1,5,i+1)
         locsDoG, GaussianPyramid = DoGdetector(im, sigma0, k, levels, th_contrast[i], th_r[i])
-        im_with_detector = np.copy(im)
-        im_with_detector[np.int64(locsDoG[:,1]),np.int64(locsDoG[:,0])] = 1
-        plt.imshow(im_with_detector,cmap = 'gray')
+        plt.imshow(im,cmap = 'gray')
         plt.title('$Th_r = $' + str(th_r[i]) + ' and $ Th_{contrast} = $' + str(th_contrast[i]))
         plt.axis('off')
+        for col, row, lev in locsDoG:
+          currCircle = plt.Circle((col, row), radius=lev+1, color='r', fill=False)
+          ax.add_artist(currCircle)
     plt.show()
 
 

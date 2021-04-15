@@ -1,4 +1,3 @@
-from my_keypoint_det import *
 from my_BRIEF import *
 import numpy as np
 import matplotlib.pyplot as plt
@@ -6,7 +5,7 @@ import cv2
 import scipy.io
 
 # %% Global parameters
-
+code_path = "../../code"
 data_path = "../../data"
 sigma0 = 1
 k = np.sqrt(2)
@@ -20,21 +19,9 @@ nbits = 256
 
 compareX, compareY = makeTestPattern(patchWidth, nbits)
 # print(f"{np.shape(compareX)}")
-scipy.io.savemat(f"{data_path}/my_data/testPattern.mat", {'compareX': compareX, 'compareY': compareY})
+scipy.io.savemat(f"{code_path}/testPattern.mat", {'compareX': compareX, 'compareY': compareY})
 
-im = cv2.imread(f"{data_path}/model_chickenbroth.jpg")
-plt.imshow(cv2.cvtColor(im, cv2.COLOR_BGR2RGB))
-_ = plt.axis('off')
-plt.show()
-
-# %% 1.2 Preprocess image
-
-im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-im = im/255
-
-# %% 1.2 Process gaussian pyramid and display
-
-GaussianPyramid = createGaussianPyramid(im, sigma0, k, levels)
-displayPyramid(GaussianPyramid)
-
-print('Gaussian pyramid shape: ' + str(GaussianPyramid.shape))
+im1 = cv2.imread(f'{data_path}/model_chickenbroth.jpg')
+im1_gray = cv2.cvtColor(im1, cv2.COLOR_BGR2GRAY)
+im1_gray = im1_gray / 255
+locs1, desc1 = briefLite(im1_gray)

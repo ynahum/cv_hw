@@ -112,17 +112,21 @@ def getLocalExtrema(DoGPyramid, DoGLevels, PrincipalCurvature,th_contrast, th_r)
     """
     mask = (np.abs(DoGPyramid) > th_contrast) & (PrincipalCurvature < th_r)
     maskInd = np.where(mask)
-    lvlMax = len(mask)-1
-    rows = mask.shape[1]; cols = mask.shape[2]
-    nSize = 1 # Neighboorhod size
+    lvl_max = PrincipalCurvature.shape[0] - 1
+    rows = PrincipalCurvature.shape[1]
+    cols = PrincipalCurvature.shape[2]
+    n_size = 1 # Neighboorhod size
     locsDoG = []
-    for lvlInd, r, c in zip(maskInd[0],maskInd[1],maskInd[2]):
-        lvlPrev = np.max([0,lvlInd-nSize]); lvlNext = np.min([lvlMax + 1,lvlInd + nSize + 1]);
-        rCurMin = np.max([0, r-nSize]); rCurMax = np.min([rows, r + nSize + 1]);
-        cCurMin = np.max([0, c-nSize]); cCurMax = np.min([cols, c + nSize + 1]);
-        curNeighborhood =  DoGPyramid[lvlPrev:lvlNext,rCurMin:rCurMax,cCurMin:cCurMax]
-        if DoGPyramid[lvlInd,r,c] == np.min(curNeighborhood) or  DoGPyramid[lvlInd,r,c] == np.max(curNeighborhood):
-            locsDoG.append(np.array([c,r, lvlInd]))
+    for lvl_ind, row, col in zip(maskInd[0],maskInd[1],maskInd[2]):
+        lvl_prev = np.max([0,lvl_ind-n_size])
+        lvl_next = np.min([lvl_max + 1,lvl_ind + n_size + 1])
+        row_cur_min = np.max([0, row-n_size])
+        row_cur_max = np.min([rows, row + n_size + 1])
+        col_cur_min = np.max([0, col-n_size])
+        col_cur_max = np.min([cols, col + n_size + 1])
+        curNeighborhood =  DoGPyramid[lvl_prev:lvl_next, row_cur_min:row_cur_max, col_cur_min:col_cur_max]
+        if DoGPyramid[lvl_ind, row, col] == np.min(curNeighborhood) or DoGPyramid[lvl_ind, row, col] == np.max(curNeighborhood):
+            locsDoG.append(np.array([col, row, lvl_ind]))
     locsDoG = np.array(locsDoG)
     return locsDoG
 

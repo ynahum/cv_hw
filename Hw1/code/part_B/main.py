@@ -32,6 +32,12 @@ scipy.io.savemat(f"{code_path}/testPattern.mat",
                      'compareY': compareY
                  })
 
-im = cv2.imread(f'{data_path}/model_chickenbroth.jpg')
-im_g = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY) / 255
-locs1, desc1 = briefLite(im_g)
+
+# %% 2.4 descriptors matching
+from testMatch import *
+
+testMatch(f'{data_path}/chickenbroth_01.jpg', f'{data_path}/chickenbroth_02.jpg')
+#testMatch(f'{data_path}/chickenbroth_01.jpg', f'{data_path}/chickenbroth_03.jpg')
+
+#self matching
+#testMatch(f'{data_path}/chickenbroth_01.jpg', f'{data_path}/chickenbroth_01.jpg')

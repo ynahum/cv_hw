@@ -3,6 +3,8 @@ from my_keypoint_det import *
 import numpy as np
 import scipy.io
 
+# %% 2.1
+
 def makeTestPattern(patchWidth, nbits):
     """
     Your code here
@@ -14,6 +16,7 @@ def makeTestPattern(patchWidth, nbits):
     return compareX, compareY
 
 
+# %% 2.2
 
 def computeBrief(im, GaussianPyramid, locsDoG, k, levels, patchWidth, compareX, compareY):
     """
@@ -22,8 +25,8 @@ def computeBrief(im, GaussianPyramid, locsDoG, k, levels, patchWidth, compareX, 
     filter_half_support = int(patchWidth / 2)
     pyramid_width = GaussianPyramid.shape[2]
     pyramid_height = GaussianPyramid.shape[1]
-    maskInnerPoints = (locsDoG[:, 1] >= filter_half_support) & (locsDoG[:, 1] <= pyramid_width - 1 - filter_half_support) & \
-        (locsDoG[:, 0] >= filter_half_support) & (locsDoG[:, 0] <= pyramid_height - 1 - filter_half_support)
+    maskInnerPoints = (locsDoG[:, 1] >= filter_half_support) & (locsDoG[:, 1] <= pyramid_height - 1 - filter_half_support) & \
+        (locsDoG[:, 0] >= filter_half_support) & (locsDoG[:, 0] <= pyramid_width - 1 - filter_half_support)
     locs = locsDoG[maskInnerPoints, :]
 
     m = locs.shape[0]
@@ -39,6 +42,8 @@ def computeBrief(im, GaussianPyramid, locsDoG, k, levels, patchWidth, compareX, 
             (x - filter_half_support):(x + filter_half_support + 1)].reshape((patchWidth * patchWidth,1))
         desc[loc_idx] = (flatSupport[compareX] < flatSupport[compareY]).reshape(-1)
     return locs, desc
+
+# %% 2.3
 
 def briefLite(im):
     """
@@ -64,3 +69,4 @@ def briefLite(im):
         paramsDict['compareX'], paramsDict['compareY'])
 
     return locs, desc
+

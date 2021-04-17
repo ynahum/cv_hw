@@ -36,8 +36,17 @@ scipy.io.savemat(f"{code_path}/testPattern.mat",
 # %% 2.4 descriptors matching
 from testMatch import *
 
-testMatch(f'{data_path}/chickenbroth_01.jpg', f'{data_path}/chickenbroth_02.jpg')
+testMatch(f'{data_path}/chickenbroth_01.jpg', f'{data_path}/chickenbroth_04.jpg')
 #testMatch(f'{data_path}/chickenbroth_01.jpg', f'{data_path}/chickenbroth_03.jpg')
 
+testMatch(f'{data_path}/incline_L.png', f'{data_path}/incline_R.png')
+
+pf_scan_scaled_path = f'{data_path}/pf_scan_scaled.jpg'
+testMatch(pf_scan_scaled_path, f'{data_path}/pf_desk.jpg')
+testMatch(pf_scan_scaled_path, f'{data_path}/pf_floor.jpg')
+testMatch(pf_scan_scaled_path, f'{data_path}/pf_floor_rot.jpg')
+testMatch(pf_scan_scaled_path, f'{data_path}/pf_pile.jpg')
+testMatch(pf_scan_scaled_path, f'{data_path}/pf_stand.jpg')
+
 #self matching
-#testMatch(f'{data_path}/chickenbroth_01.jpg', f'{data_path}/chickenbroth_01.jpg')
+testMatch(f'{data_path}/chickenbroth_01.jpg', f'{data_path}/chickenbroth_01.jpg')

@@ -7,11 +7,13 @@ import scipy.io
 # %% Global parameters
 code_path = "../../code"
 data_path = "../../data"
+
 sigma0 = 1
 k = np.sqrt(2)
-levels = np.array([-1, 0, 2, 3, 4])
+levels = np.array([-1, 0, 1, 2, 3, 4])
 th_contrast = 0.03
 th_r = 12
+
 patchWidth = 9
 nbits = 256
 

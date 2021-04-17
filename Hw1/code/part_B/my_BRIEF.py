@@ -22,22 +22,22 @@ def computeBrief(im, GaussianPyramid, locsDoG, k, levels, patchWidth, compareX, 
     filter_half_support = int(patchWidth / 2)
     pyramid_width = GaussianPyramid.shape[2]
     pyramid_height = GaussianPyramid.shape[1]
-    maskInnerPoints = (locsDoG[:, 1] >= filter_half_support & (locsDoG[:, 1] < pyramid_width - filter_half_support)) & \
-        (locsDoG[:, 2] >= filter_half_support & (locsDoG[:, 2] < pyramid_height - filter_half_support))
+    maskInnerPoints = (locsDoG[:, 1] >= filter_half_support) & (locsDoG[:, 1] <= pyramid_width - 1 - filter_half_support) & \
+        (locsDoG[:, 0] >= filter_half_support) & (locsDoG[:, 0] <= pyramid_height - 1 - filter_half_support)
     locs = locsDoG[maskInnerPoints, :]
+
     m = locs.shape[0]
     n = len(compareX)
     desc = np.zeros((m, n))
 
-    for row_idx, row in enumerate(locs):
-        x = row[0]
-        y = row[1]
-        level = row[2]
+    for loc_idx, loc in enumerate(locs):
+        x = loc[0]
+        y = loc[1]
+        level = loc[2]
         actual_level_idx = np.where(levels == level)[0]
         flatSupport = GaussianPyramid[actual_level_idx, (y - filter_half_support):(y + filter_half_support + 1),
-            (x - filter_half_support):(x + filter_half_support + 1)].reshape(-1)
-        positive_locations = (flatSupport[compareX] < flatSupport[compareY])
-        desc[row_idx] = positive_locations.reshape((1,n))
+            (x - filter_half_support):(x + filter_half_support + 1)].reshape((patchWidth * patchWidth,1))
+        desc[loc_idx] = (flatSupport[compareX] < flatSupport[compareY]).reshape(-1)
     return locs, desc
 
 def briefLite(im):
@@ -46,10 +46,12 @@ def briefLite(im):
     """
     sigma0 = 1
     k = np.sqrt(2)
+    levels = np.array([-1, 0, 1, 2, 3, 4])
+    th_contrast = 0.03
+    th_r = 12
     patchWidth = 9
-    levels = np.array([-1, 0, 1, 2, 3, 4])  # np.array([1, 2, 3, 4, 6])
     code_path = "../../code"
     compareDict = scipy.io.loadmat(f"{code_path}/testPattern.mat")
-    locsDoG, GaussianPyramid = DoGdetector(im, sigma0, k, levels, th_contrast=0.03, th_r=12)
+    locsDoG, GaussianPyramid = DoGdetector(im, sigma0, k, levels, th_contrast=th_contrast, th_r=th_r)
     locs, desc = computeBrief(im, GaussianPyramid, locsDoG, k, levels, patchWidth, compareDict['compareX'], compareDict['compareY'])
     return locs, desc

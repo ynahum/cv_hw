@@ -8,7 +8,7 @@ import cv2
 data_path = "../../data"
 sigma0 = 1
 k = np.sqrt(2)
-levels = np.array([-1,0,2,3,4])
+levels = np.array([-1, 0, 1, 2, 3, 4])
 th_contrast = 0.03
 th_r = 12
 
@@ -45,7 +45,7 @@ print('Principal curvature shape: ' + str(PrincipalCurvature.shape))
 
 plt.figure()
 for i in range(len(PrincipalCurvature)):
-    plt.subplot(2,2,i+1)
+    plt.subplot(3,2,i+1)
     plt.imshow(PrincipalCurvature[i,:,:],cmap='gray')
     plt.title('Edge suppresion at level: ' + str(i + 1))
     plt.axis('off')
@@ -56,7 +56,7 @@ plt.show()
 
 plt.figure()
 for i in range(len(PrincipalCurvature)):
-    plt.subplot(2,2,i+1)
+    plt.subplot(3,2,i+1)
     plt.imshow(cv2.threshold(PrincipalCurvature[i,:,:],th_r,1,cv2.THRESH_BINARY_INV)[1],cmap='gray')
     plt.title('Edge suppresion at level: ' + str(i + 1))
     plt.axis('off')
@@ -94,7 +94,7 @@ plt.show()
 im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
 im = im/255
 
-runDoGdetectorWithDifferentParameters(im,sigma0,k,levels)
+runDoGdetectorWithDifferentParameters(im, sigma0, k, levels)
 
 # %% Load image OurImage and test feature extractor
 
@@ -106,4 +106,4 @@ plt.show()
 im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
 im = im/255
 
-runDoGdetectorWithDifferentParameters(im,sigma0,k,levels)
+runDoGdetectorWithDifferentParameters(im, sigma0, k, levels)

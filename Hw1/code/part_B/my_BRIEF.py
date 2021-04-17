@@ -44,14 +44,23 @@ def briefLite(im):
     """
     Your code here
     """
-    sigma0 = 1
-    k = np.sqrt(2)
-    levels = np.array([-1, 0, 1, 2, 3, 4])
-    th_contrast = 0.03
-    th_r = 12
-    patchWidth = 9
     code_path = "../../code"
-    compareDict = scipy.io.loadmat(f"{code_path}/testPattern.mat")
-    locsDoG, GaussianPyramid = DoGdetector(im, sigma0, k, levels, th_contrast=th_contrast, th_r=th_r)
-    locs, desc = computeBrief(im, GaussianPyramid, locsDoG, k, levels, patchWidth, compareDict['compareX'], compareDict['compareY'])
+
+    paramsDict = scipy.io.loadmat(f"{code_path}/testPattern.mat")
+
+    sigma0 = paramsDict['sigma0'][0][0]
+    k = paramsDict['k'][0][0]
+    levels = paramsDict['levels'][0]
+    patchWidth = paramsDict['patchWidth'][0][0]
+    th_contrast = paramsDict['th_contrast'][0][0]
+    th_r = paramsDict['th_r'][0][0]
+
+    locsDoG, GaussianPyramid = DoGdetector(
+        im, sigma0, k, levels,
+        th_contrast, th_r)
+
+    locs, desc = computeBrief(
+        im, GaussianPyramid, locsDoG, k, levels, patchWidth,
+        paramsDict['compareX'], paramsDict['compareY'])
+
     return locs, desc

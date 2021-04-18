@@ -45,7 +45,7 @@ print('Principal curvature shape: ' + str(PrincipalCurvature.shape))
 
 plt.figure()
 for i in range(len(PrincipalCurvature)):
-    plt.subplot(3,2,i+1)
+    plt.subplot(1,5,i+1)
     plt.imshow(PrincipalCurvature[i,:,:],cmap='gray')
     plt.title('Edge suppresion at level: ' + str(i + 1))
     plt.axis('off')
@@ -56,7 +56,7 @@ plt.show()
 
 plt.figure()
 for i in range(len(PrincipalCurvature)):
-    plt.subplot(3,2,i+1)
+    plt.subplot(1,5,i+1)
     plt.imshow(cv2.threshold(PrincipalCurvature[i,:,:],th_r,1,cv2.THRESH_BINARY_INV)[1],cmap='gray')
     plt.title('Edge suppresion at level: ' + str(i + 1))
     plt.axis('off')

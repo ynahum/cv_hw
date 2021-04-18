@@ -17,7 +17,7 @@ patchWidth = 9
 nbits = 256
 
 # %% 2.1 make test pattern
-'''
+
 compareX, compareY = makeTestPattern(patchWidth, nbits)
 
 scipy.io.savemat(f"{code_path}/testPattern.mat",
@@ -31,7 +31,7 @@ scipy.io.savemat(f"{code_path}/testPattern.mat",
                      'compareX': compareX,
                      'compareY': compareY
                  })
-'''
+
 
 # %% 2.4 descriptors matching
 

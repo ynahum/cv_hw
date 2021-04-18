@@ -34,13 +34,20 @@ scipy.io.savemat(f"{code_path}/testPattern.mat",
 '''
 
 # %% 2.4 descriptors matching
-'''
+
 import testMatch
 
 testMatch.main()
-'''
+
 
 # %% 2.5 brief properties
+
 import briefRotTest
 
 briefRotTest.main()
+
+
+# %% 2.6 ORB
+import orbTest
+
+orbTest.main()

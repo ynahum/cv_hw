@@ -2,6 +2,8 @@
 from my_keypoint_det import *
 import numpy as np
 import scipy.io
+from scipy.spatial.distance import cdist
+
 
 # %% 2.1
 
@@ -70,3 +72,26 @@ def briefLite(im):
 
     return locs, desc
 
+
+# %% 2.4 descriptors matching
+
+def briefMatch(desc1, desc2, ratio=0.8):
+    #     performs the descriptor matching
+    #     inputs  : desc1 , desc2 - m1 x n and m2 x n matrices. m1 and m2 are the number of keypoints in image 1 and 2.
+    #                               n is the number of bits in the brief
+    #               ratio         - ratio used for testing whether two descriptors should be matched.
+    #     outputs : matches       - p x 2 matrix. where the first column are indices
+    #                                         into desc1 and the second column are indices into desc2
+    D = cdist(np.float32(desc1), np.float32(desc2), metric='hamming')
+    # find smallest distance
+    ix2 = np.argmin(D, axis=1)
+    d1 = D.min(1)
+    # find second smallest distance
+    d12 = np.partition(D, 2, axis=1)[:,0:2]
+    d2 = d12.max(1)
+    r = d1/(d2+1e-10)
+    is_discr = r<ratio
+    ix2 = ix2[is_discr]
+    ix1 = np.arange(D.shape[0])[is_discr]
+    matches = np.stack((ix1,ix2), axis=-1)
+    return matches

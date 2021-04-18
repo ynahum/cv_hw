@@ -42,7 +42,7 @@ def computeBrief(im, GaussianPyramid, locsDoG, k, levels, patchWidth, compareX, 
         actual_level_idx = np.where(levels == level)[0]
         flatSupport = GaussianPyramid[actual_level_idx, (y - filter_half_support):(y + filter_half_support + 1),
             (x - filter_half_support):(x + filter_half_support + 1)].reshape((patchWidth * patchWidth,1))
-        desc[loc_idx] = (flatSupport[compareX] < flatSupport[compareY]).reshape(-1)
+        desc[loc_idx] = (flatSupport[compareX] < flatSupport[compareY]).reshape((n,))
     return locs, desc
 
 # %% 2.3

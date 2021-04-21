@@ -25,7 +25,7 @@ def plotMatches(im1, im2, matches, locs1, locs2):
         plt.plot(x,y,'g.')
     plt.show()
 
-def MatchAndPlot(im1_path, im2_path):
+def MatchAndPlot(im1_path, im2_path, brief_match_ratio=0.6):
 
     im1 = cv2.imread(im1_path)
     im1_g = cv2.cvtColor(im1, cv2.COLOR_BGR2GRAY) / 255
@@ -35,7 +35,7 @@ def MatchAndPlot(im1_path, im2_path):
     im2_g = cv2.cvtColor(im2, cv2.COLOR_BGR2GRAY) / 255
     locs2, desc2 = briefLite(im2_g)
 
-    matches = briefMatch(desc1, desc2)
+    matches = briefMatch(desc1, desc2, brief_match_ratio)
 
     plotMatches(im1, im2, matches, locs1, locs2)
 
@@ -45,7 +45,7 @@ def main():
     MatchAndPlot(f'{data_path}/chickenbroth_01.jpg', f'{data_path}/chickenbroth_04.jpg')
     # testMatch(f'{data_path}/chickenbroth_01.jpg', f'{data_path}/chickenbroth_03.jpg')
 
-    MatchAndPlot(f'{data_path}/incline_L.png', f'{data_path}/incline_R.png')
+    MatchAndPlot(f'{data_path}/incline_L.png', f'{data_path}/incline_R.png', brief_match_ratio=0.4)
 
     pf_scan_scaled_path = f'{data_path}/pf_scan_scaled.jpg'
     MatchAndPlot(pf_scan_scaled_path, f'{data_path}/pf_desk.jpg')

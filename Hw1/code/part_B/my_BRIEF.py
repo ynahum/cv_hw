@@ -75,7 +75,7 @@ def briefLite(im):
 
 # %% 2.4 descriptors matching
 
-def briefMatch(desc1, desc2, ratio=0.8):
+def briefMatch(desc1, desc2, ratio=0.6):
     #     performs the descriptor matching
     #     inputs  : desc1 , desc2 - m1 x n and m2 x n matrices. m1 and m2 are the number of keypoints in image 1 and 2.
     #                               n is the number of bits in the brief

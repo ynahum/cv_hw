@@ -25,7 +25,7 @@ def plotMatches(im1, im2, matches, locs1, locs2):
         plt.plot(x,y,'g.')
     plt.show()
 
-def MatchAndPlot(im1_path, im2_path, brief_match_ratio=0.6):
+def MatchAndPlot(im1_path, im2_path, brief_match_ratio=0.4):
 
     im1 = cv2.imread(im1_path)
     im1_g = cv2.cvtColor(im1, cv2.COLOR_BGR2GRAY) / 255

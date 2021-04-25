@@ -6,6 +6,7 @@ import cv2
 # %% Global parameters
 
 data_path = "../../data"
+my_data_path = "../../my_data"
 sigma0 = 1
 k = np.sqrt(2)
 levels = np.array([-1, 0, 1, 2, 3, 4])
@@ -56,7 +57,7 @@ plt.show()
 
 plt.figure()
 for i in range(len(PrincipalCurvature)):
-    plt.subplot(1,5,i+1)
+    plt.subplot(5,1,i+1)
     plt.imshow(cv2.threshold(PrincipalCurvature[i,:,:],th_r,1,cv2.THRESH_BINARY_INV)[1],cmap='gray')
     plt.title('Edge suppresion at level: ' + str(i + 1))
     plt.axis('off')
@@ -98,7 +99,7 @@ runDoGdetectorWithDifferentParameters(im, sigma0, k, levels)
 
 # %% Load image OurImage and test feature extractor
 
-im = cv2.imread(f"{data_path}/my_data/OurImage.jpeg")
+im = cv2.imread(f"{my_data_path}/OurImage.jpeg")
 plt.figure()
 plt.imshow(cv2.cvtColor(im, cv2.COLOR_BGR2RGB))
 _ = plt.axis('off')

@@ -39,7 +39,7 @@ plt.title('Horse 1')
 plt.subplot(2,2,4)
 plt.imshow(horse2)
 plt.title('Horse 2')
-
+plt.show()
 # %% Q1.2
 
 # %% Classic method
@@ -63,6 +63,7 @@ plt.title('Horse 1')
 plt.subplot(2,2,4)
 plt.imshow(mark_boundaries(horse2, horse2SegmentsFz))
 plt.title('Horse 2')
+plt.show()
 
 # %% Deep learning method
 
@@ -125,6 +126,7 @@ plt.title('Horse 1')
 plt.subplot(2,2,4)
 plt.imshow(mark_boundaries(horse2, horse2SegmentsDeep))
 plt.title('Horse 2')
+plt.show()
 
 # %% Q1.3
 
@@ -146,6 +148,7 @@ plt.title('Car')
 plt.subplot(1,3,3)
 plt.imshow(cake)
 plt.title('Cake')
+plt.show()
 
 # %% Q 1.4
 
@@ -166,6 +169,7 @@ plt.title('Car')
 plt.subplot(1,3,3)
 plt.imshow(mark_boundaries(cake, cakeSegmentsFz))
 plt.title('Cake')
+plt.show()
 
 # %% Deep segmentation
 
@@ -184,6 +188,7 @@ plt.title('Car')
 plt.subplot(1,3,3)
 plt.imshow(mark_boundaries(cake, cakeSegmentsDeep))
 plt.title('Cake')
+plt.show()
 
 # %% Q 1.5 
 
@@ -231,6 +236,7 @@ cowLabelName = GetLabelName(cowLabel)
 plt.figure()
 plt.imshow(cow)
 plt.title('Cow, feedforward label: ' + str(cowLabelName))
+plt.show()
 
 # %% Q 1.8
 
@@ -248,6 +254,7 @@ plt.title('Felzenszwalb')
 plt.subplot(1,2,2)
 plt.imshow(mark_boundaries(cow, cowSegmentsDeep))
 plt.title('DeepLabV3')
+plt.show()
 
 # %% Q 1.9
 
@@ -269,6 +276,7 @@ cowCropped = cropWithRespectToMask(cow,maskCow)
 plt.figure()
 plt.imshow(cowCropped)
 plt.title('Segmented cow')
+plt.show()
 
 # %% Load beach image
 
@@ -279,6 +287,7 @@ beach = cv2.cvtColor(cv2.imread('./data/beach.jpg'), cv2.COLOR_BGR2RGB)
 plt.figure()
 plt.imshow(beach)
 plt.title('Beach')
+plt.show()
 
 # %% Resize cropped cow
 
@@ -287,6 +296,7 @@ cowCroppedResized = cv2.resize(cowCropped,(beach.shape[1],beach.shape[0]))
 plt.figure()
 plt.imshow(cowCroppedResized)
 plt.title('Segmented cow rescaled for beach image size')
+plt.show()
 
 # %% Merge beach and cows
 
@@ -300,6 +310,7 @@ for i in range(beachAndCow.shape[-1]):
 plt.figure()
 plt.imshow(beachAndCow)
 plt.title('Cow on a beach')
+plt.show()
 
 # %% Q1.10
 
@@ -310,7 +321,7 @@ cowOnBeachLabelName = GetLabelName(cowOnBeachLabel)
 plt.figure()
 plt.imshow(beachAndCow)
 plt.title('Cow on a beach, feedforward label: ' + str(cowOnBeachLabelName))
-
+plt.show()
 
 
 

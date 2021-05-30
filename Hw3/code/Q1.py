@@ -235,12 +235,6 @@ curClass = np.unique(cowSegmentsDeep)[1]
 maskCow=np.zeros_like(cowSegmentsDeep)
 maskCow[cowSegmentsDeep==curClass]=1
 
-def cropWithRespectToMask(img,mask):
-    imgCropped = np.zeros_like(img)
-    for i in range(img.shape[-1]):
-        imgCropped[:,:,i] = img[:,:,i] * mask
-    return imgCropped
-    
 cowCropped = cropWithRespectToMask(cow,maskCow)
 
 # %% Display segmented cow

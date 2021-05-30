@@ -1,4 +1,5 @@
 # %% Imports
+import numpy as np
 import torch
 import torchvision.transforms as transforms
 
@@ -28,6 +29,11 @@ def DeepLabSegmentation(input_image,model,device,return_type):
         output_predictions
     return output_predictions
 
+def cropWithRespectToMask(img,mask):
+    imgCropped = np.zeros_like(img)
+    for i in range(img.shape[-1]):
+        imgCropped[:,:,i] = img[:,:,i] * mask
+    return imgCropped
 
 
 

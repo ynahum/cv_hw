@@ -4,28 +4,30 @@ import cv2
 from shared_Q1_Q2 import *
 from frame_video_convert import *
 
+def create_dir(path):
+  if os.path.exists(path):
+    files = glob.glob(path + "/*")
+    for f in files:
+      os.remove(f)
+    os.removedirs(path)
+  if not os.path.exists(path):
+    os.makedirs(path)
+
 # %% Q2.1
 
 # Convert .mp4 video to .jpg frames 
 
-self_input_file_path = "./my_data/self.mp4"
-self_output_dir_path = "./output/self_frames"
+self_mp4_file_path = "./my_data/self.mp4"
+self_dir_path = "./output/self_frames"
 
-if os.path.exists(self_output_dir_path):
-  files = glob.glob(self_output_dir_path + "/*")
-  for f in files:
-    os.remove(f)
-  os.removedirs(self_output_dir_path)
-if not os.path.exists(self_output_dir_path):
-  os.makedirs(self_output_dir_path)
-
-video_to_image_seq(self_input_file_path, self_output_dir_path)
+create_dir(self_dir_path)
+video_to_image_seq(self_mp4_file_path, self_dir_path)
 
 # Showing 2 frames
-self_frame1_name = "0350.jpg"
-self_frame2_name = "0550.jpg"
-self_frame1_file_path = self_output_dir_path + "/" + self_frame1_name
-self_frame2_file_path = self_output_dir_path + "/" + self_frame2_name
+self_frame1_name = "0050.jpg"
+self_frame2_name = "0280.jpg"
+self_frame1_file_path = self_dir_path + "/" + self_frame1_name
+self_frame2_file_path = self_dir_path + "/" + self_frame2_name
 self1 = cv2.cvtColor(cv2.imread(self_frame1_file_path), cv2.COLOR_BGR2RGB)
 self2 = cv2.cvtColor(cv2.imread(self_frame2_file_path), cv2.COLOR_BGR2RGB)
 
@@ -48,27 +50,20 @@ device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 model=model.to(device)
 
 # Deep segmentation
-segmented_self_output_dir_path = "./output/segmented_self_frames"
+segmented_self_dir_path = "./output/segmented_self_frames"
+create_dir(segmented_self_dir_path)
 
-if os.path.exists(segmented_self_output_dir_path):
-  files = glob.glob(segmented_self_output_dir_path + "/*")
-  for f in files:
-    os.remove(f)
-  os.removedirs(segmented_self_output_dir_path)
-if not os.path.exists(segmented_self_output_dir_path):
-  os.makedirs(segmented_self_output_dir_path)
-
-input_files = sorted(glob.glob(os.path.join(self_output_dir_path, '*.jpg')))
-for filename in input_files:
+self_files = sorted(glob.glob(os.path.join(self_dir_path, '*.jpg')))
+for filename in self_files:
   img = cv2.cvtColor(cv2.imread(filename), cv2.COLOR_BGR2RGB)
   path, fname = os.path.split(filename)
   seg_img = DeepLabSegmentation(img, model, device, 1)
-  cv2.imwrite(os.path.join(segmented_self_output_dir_path, fname), seg_img)
+  cv2.imwrite(os.path.join(segmented_self_dir_path, fname), seg_img)
 
 # Showing the 2 segmented frames
 
-seg_self_frame1_file_path = segmented_self_output_dir_path + "/" + self_frame1_name
-seg_self_frame2_file_path = segmented_self_output_dir_path + "/" + self_frame2_name
+seg_self_frame1_file_path = segmented_self_dir_path + "/" + self_frame1_name
+seg_self_frame2_file_path = segmented_self_dir_path + "/" + self_frame2_name
 seg_self1 = cv2.cvtColor(cv2.imread(seg_self_frame1_file_path), cv2.COLOR_BGR2GRAY)
 seg_self2 = cv2.cvtColor(cv2.imread(seg_self_frame2_file_path), cv2.COLOR_BGR2GRAY)
 
@@ -93,32 +88,16 @@ for i,file in enumerate(seg_self_images):
 
 # Convert .mp4 video to .jpg frames
 
-dancing_man_input_file_path = "./data/dancing_man_model.mp4"
-dancing_man_output_dir_path = "./output/dancing_man_frames"
-
-if os.path.exists(dancing_man_output_dir_path):
-  files = glob.glob(dancing_man_output_dir_path + "/*")
-  for f in files:
-    os.remove(f)
-  os.removedirs(dancing_man_output_dir_path)
-if not os.path.exists(dancing_man_output_dir_path):
-  os.makedirs(dancing_man_output_dir_path)
-
-video_to_image_seq(dancing_man_input_file_path, dancing_man_output_dir_path)
+dancing_man_dir_path = "./output/dancing_man_frames"
+create_dir(dancing_man_dir_path)
+video_to_image_seq("./data/dancing_man_model.mp4", dancing_man_dir_path)
 
 # semantic segmentation using color segmentation
 
 seg_dancing_man_dir_path = "./output/segmented_dancing_man_frames"
+create_dir(seg_dancing_man_dir_path)
 
-if os.path.exists(seg_dancing_man_dir_path):
-  files = glob.glob(seg_dancing_man_dir_path + "/*")
-  for f in files:
-    os.remove(f)
-  os.removedirs(seg_dancing_man_dir_path)
-if not os.path.exists(seg_dancing_man_dir_path):
-  os.makedirs(seg_dancing_man_dir_path)
-
-input_files = sorted(glob.glob(os.path.join(dancing_man_output_dir_path, '*.jpg')))
+dancing_man_files = sorted(glob.glob(os.path.join(dancing_man_dir_path, '*.jpg')))
 
 def color_segmentation(hsv_img, bg_hsv_low, bg_hsv_high, erode=False, erode_iterations=1, erode_kernel=None):
   mask = cv2.inRange(hsv_img, bg_hsv_low,bg_hsv_high)
@@ -130,7 +109,7 @@ def color_segmentation(hsv_img, bg_hsv_low, bg_hsv_high, erode=False, erode_iter
   seg_hsv_img = cv2.bitwise_and(hsv_img, hsv_img, mask=mask_inv)
   return seg_hsv_img, mask_inv
 
-for filename in input_files:
+for filename in dancing_man_files:
   hsv_img = cv2.cvtColor(cv2.imread(filename), cv2.COLOR_BGR2HSV)
   path, fname = os.path.split(filename)
   bg_hsv_green_low = (40, 130, 0)
@@ -140,8 +119,8 @@ for filename in input_files:
 
 dancing_man_frame1_name = "0100.jpg"
 dancing_man_frame2_name = "0200.jpg"
-dancing_man_frame1_file_path = dancing_man_output_dir_path + "/" + dancing_man_frame1_name
-dancing_man_frame2_file_path = dancing_man_output_dir_path + "/" + dancing_man_frame2_name
+dancing_man_frame1_file_path = dancing_man_dir_path + "/" + dancing_man_frame1_name
+dancing_man_frame2_file_path = dancing_man_dir_path + "/" + dancing_man_frame2_name
 dancing_man1 = cv2.cvtColor(cv2.imread(dancing_man_frame1_file_path), cv2.COLOR_BGR2RGB)
 dancing_man2 = cv2.cvtColor(cv2.imread(dancing_man_frame2_file_path), cv2.COLOR_BGR2RGB)
 
@@ -211,53 +190,68 @@ add_fg_image(pink_floyd_bg_img, roi_fg, roi_fg_mask=seg_hand_mask, y_offset=hand
 #ax.imshow(cv2.cvtColor(seg_hsv_hand_img, cv2.COLOR_HSV2RGB))
 #ax.set_axis_off()
 
-# crop, scale and add dancing man to background
+# crop, scale and add dancing man + self images to background and create the clip
 
 final_video_frames_dir_path = "./output/final_video_frames"
+create_dir(final_video_frames_dir_path)
 
-if os.path.exists(final_video_frames_dir_path):
-  files = glob.glob(final_video_frames_dir_path + "/*")
-  for f in files:
-    os.remove(f)
-  os.removedirs(final_video_frames_dir_path)
-if not os.path.exists(final_video_frames_dir_path):
-  os.makedirs(final_video_frames_dir_path)
+dancing_man_files = sorted(glob.glob(os.path.join(dancing_man_dir_path, '*.jpg')))
+number_of_dancing_man_files = len(dancing_man_files)
 
-input_files = sorted(glob.glob(os.path.join(dancing_man_output_dir_path, '*.jpg')))
-for filename in input_files:
+seg_self_files = sorted(glob.glob(os.path.join(segmented_self_dir_path, '*.jpg')))
+number_of_seg_self_files = len(seg_self_files)
+
+for i, seg_self_filename in enumerate(seg_self_files):
 
   curr_bg_img = pink_floyd_bg_img.copy()
-  img = cv2.imread(filename)
+
+  # read segmented self image
+  seg_self_img = cv2.cvtColor(cv2.imread(seg_self_filename), cv2.COLOR_BGR2RGB)
+
+  # scale self segmented image
+  scaled_seg_self_img = scale_image(seg_self_img,30)
+
+  # add self segmented image to background
+  x_offset = 10
+  y_offset = 10
+  scaled_seg_self_img_gray = cv2.cvtColor(scaled_seg_self_img, cv2.COLOR_RGB2GRAY)
+  ret, mask = cv2.threshold(scaled_seg_self_img_gray, 10, 255, cv2.THRESH_BINARY)
+  add_fg_image(curr_bg_img, scaled_seg_self_img, mask, y_offset, x_offset)
+
+  str_index_dancing_man_filename = str(i%number_of_dancing_man_files).zfill(4)
+  dancing_man_filename = os.path.join(dancing_man_dir_path, str_index_dancing_man_filename + ".jpg")
+  dancing_man_img = cv2.imread(dancing_man_filename)
 
   # horizontal crop
-  _, width, _ = img.shape
-  cropped_img = img[:, int(width/3):int(width*2/3), :]
+  _, width, _ = dancing_man_img.shape
+  cropped_dancing_man_img = dancing_man_img[:, int(width/5):int(width*2/3), :]
 
   # scale
-  scaled_img = scale_image(cropped_img,30)
-  #print(scaled_img.shape)
+  scaled_dancing_man_img = scale_image(cropped_dancing_man_img,30)
+  #print(scaled_dancing_man_img.shape)
 
   # color segment
-  hsv_img = cv2.cvtColor(scaled_img, cv2.COLOR_BGR2HSV)
+  hsv_dancing_man_img = cv2.cvtColor(scaled_dancing_man_img, cv2.COLOR_BGR2HSV)
   bg_hsv_green_low = (40, 130, 0)
   bg_hsv_green_high = (70, 255, 255)
-  seg_hsv_img, mask = color_segmentation(hsv_img, bg_hsv_green_low, bg_hsv_green_high) 
-  seg_img = cv2.cvtColor(seg_hsv_img, cv2.COLOR_HSV2BGR)
+  seg_hsv_dancing_man_img, mask = color_segmentation(hsv_dancing_man_img, bg_hsv_green_low, bg_hsv_green_high) 
+  seg_dancing_man_img = cv2.cvtColor(seg_hsv_dancing_man_img, cv2.COLOR_HSV2BGR)
 
   # add to background
-  x_offset = 620
-  y_offset = 210
-  add_fg_image(curr_bg_img, seg_img, mask, y_offset, x_offset)
+  x_offset = 600
+  y_offset = 200
+  add_fg_image(curr_bg_img, seg_dancing_man_img, mask, y_offset, x_offset)
 
-  path, fname = os.path.split(filename)
+  path, fname = os.path.split(seg_self_filename)
   cv2.imwrite(os.path.join(final_video_frames_dir_path, fname), curr_bg_img)
 
+# create the final video from images
 image_seq_to_video(final_video_frames_dir_path, output_path='./output/video.mp4')
 
-#fig = plt.figure(figsize=(10,15))
-#ax = fig.add_subplot(1,1,1)
-#ax.imshow(cv2.cvtColor(curr_bg_img, cv2.COLOR_BGR2RGB))
-#ax.set_axis_off()
+fig = plt.figure(figsize=(10,15))
+ax = fig.add_subplot(1,1,1)
+ax.imshow(cv2.cvtColor(curr_bg_img, cv2.COLOR_BGR2RGB))
+ax.set_axis_off()
 
 
 

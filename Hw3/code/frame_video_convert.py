@@ -10,12 +10,11 @@ import os
 def image_seq_to_video(imgs_path, output_path='./video.mp4', fps=15.0):
     output = output_path
     img_array = []
-    for filename in glob.glob(os.path.join(imgs_path, '*.jpg')):
+    for filename in sorted(glob.glob(os.path.join(imgs_path, '*.jpg'))):
         img = cv2.imread(filename)
         height, width, layers = img.shape
-        # img = cv2.resize(img, (width // 2, height // 2))
-        img = cv2.resize(img, (width, height))
-        height, width, layers = img.shape
+        #img = cv2.resize(img, (width, height))
+        #height, width, layers = img.shape
         size = (width, height)
         img_array.append(img)
 

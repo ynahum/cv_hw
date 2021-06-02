@@ -26,16 +26,17 @@ video_to_image_seq(self_mp4_file_path, self_dir_path)
 # Showing 2 frames
 self_frame1_name = "0050.jpg"
 self_frame2_name = "0280.jpg"
+
 self_frame1_file_path = self_dir_path + "/" + self_frame1_name
 self_frame2_file_path = self_dir_path + "/" + self_frame2_name
-self1 = cv2.cvtColor(cv2.imread(self_frame1_file_path), cv2.COLOR_BGR2RGB)
-self2 = cv2.cvtColor(cv2.imread(self_frame2_file_path), cv2.COLOR_BGR2RGB)
+self1 = cv2.imread(self_frame1_file_path)
+self2 = cv2.imread(self_frame2_file_path)
 
 fig = plt.figure(figsize=(10,15))
 self_images = [self1, self2]
 for i,file in enumerate(self_images):
   ax = fig.add_subplot(1, len(self_images),i+1)
-  ax.imshow(self_images[i])
+  ax.imshow(cv2.cvtColor(self_images[i], cv2.COLOR_BGR2RGB))
   ax.set_axis_off()
 
 # %% Q2.2
@@ -53,35 +54,41 @@ model=model.to(device)
 segmented_self_dir_path = "./output/segmented_self_frames"
 create_dir(segmented_self_dir_path)
 
+def get_human_segment(img, seg_img):
+  seg_values, value_counts = np.unique(seg_img.reshape(-1),axis=0, return_counts=True)
+  value_count_sort_ind = np.argsort(value_counts)
+  #print(seg_values[value_count_sort_ind])
+  #print(value_counts[value_count_sort_ind])
+  curClass = seg_values[value_count_sort_ind][-2]
+  mask_self = np.zeros_like(seg_img)
+  mask_self[seg_img == curClass] = 1
+  return cropWithRespectToMask(img, mask_self)
+
 self_files = sorted(glob.glob(os.path.join(self_dir_path, '*.jpg')))
-for filename in self_files:
-  img = cv2.cvtColor(cv2.imread(filename), cv2.COLOR_BGR2RGB)
-  path, fname = os.path.split(filename)
-  seg_img = DeepLabSegmentation(img, model, device, 1)
-  cv2.imwrite(os.path.join(segmented_self_dir_path, fname), seg_img)
+for i, self_file in enumerate(self_files):
+  self_img = cv2.imread(self_file)
+  path, fname = os.path.split(self_file)
+  seg_self_img = DeepLabSegmentation(cv2.cvtColor(self_img, cv2.COLOR_BGR2RGB), model, device, 1)
+  human_seg_self_img = get_human_segment(self_img, seg_self_img)
+  cv2.imwrite(os.path.join(segmented_self_dir_path, fname), human_seg_self_img)
+
+#fig = plt.figure(figsize=(10,15))
+#ax = fig.add_subplot(1,1,1)
+#ax.imshow(cv2.cvtColor(human_seg_self_img, cv2.COLOR_BGR2RGB))
+#ax.set_axis_off()
 
 # Showing the 2 segmented frames
 
 seg_self_frame1_file_path = segmented_self_dir_path + "/" + self_frame1_name
 seg_self_frame2_file_path = segmented_self_dir_path + "/" + self_frame2_name
-seg_self1 = cv2.cvtColor(cv2.imread(seg_self_frame1_file_path), cv2.COLOR_BGR2GRAY)
-seg_self2 = cv2.cvtColor(cv2.imread(seg_self_frame2_file_path), cv2.COLOR_BGR2GRAY)
-
+seg_self1 = cv2.imread(seg_self_frame1_file_path)
+seg_self2 = cv2.imread(seg_self_frame2_file_path)
 
 fig = plt.figure(figsize=(10,15))
 seg_self_images = [seg_self1, seg_self2]
-
 for i,file in enumerate(seg_self_images):
   ax = fig.add_subplot(1, len(seg_self_images),i+1)
-  seg_values, value_counts = np.unique(seg_self_images[i].reshape(-1),axis=0, return_counts=True)
-  value_count_sort_ind = np.argsort(value_counts)
-  #print(seg_values[value_count_sort_ind])
-  #print(value_counts[value_count_sort_ind])
-  curClass = seg_values[value_count_sort_ind][-2]
-  mask_self = np.zeros_like(seg_self_images[i])
-  mask_self[seg_self_images[i] == curClass] = 1
-  self_cropped = cropWithRespectToMask(self_images[i], mask_self)
-  ax.imshow(self_cropped)
+  ax.imshow(cv2.cvtColor(seg_self_images[i], cv2.COLOR_BGR2RGB))
   ax.set_axis_off()
 
 # %% Q2.3
@@ -104,7 +111,7 @@ def color_segmentation(hsv_img, bg_hsv_low, bg_hsv_high, erode=False, erode_iter
   mask_inv = cv2.bitwise_not(mask)
   if erode:
     if erode_kernel is None:
-      erode_kernel = np.ones((5, 5), np.uint8)
+      erode_kernel = np.ones((3, 3), np.uint8)
     mask_inv = cv2.erode(mask_inv, erode_kernel, iterations=erode_iterations)
   seg_hsv_img = cv2.bitwise_and(hsv_img, hsv_img, mask=mask_inv)
   return seg_hsv_img, mask_inv
@@ -121,26 +128,26 @@ dancing_man_frame1_name = "0100.jpg"
 dancing_man_frame2_name = "0200.jpg"
 dancing_man_frame1_file_path = dancing_man_dir_path + "/" + dancing_man_frame1_name
 dancing_man_frame2_file_path = dancing_man_dir_path + "/" + dancing_man_frame2_name
-dancing_man1 = cv2.cvtColor(cv2.imread(dancing_man_frame1_file_path), cv2.COLOR_BGR2RGB)
-dancing_man2 = cv2.cvtColor(cv2.imread(dancing_man_frame2_file_path), cv2.COLOR_BGR2RGB)
+dancing_man1 = cv2.imread(dancing_man_frame1_file_path)
+dancing_man2 = cv2.imread(dancing_man_frame2_file_path)
 
 fig = plt.figure(figsize=(10,15))
 dancing_man_images = [dancing_man1, dancing_man2]
 for i,file in enumerate(dancing_man_images):
   ax = fig.add_subplot(1, len(dancing_man_images),i+1)
-  ax.imshow(dancing_man_images[i])
+  ax.imshow(cv2.cvtColor(dancing_man_images[i], cv2.COLOR_BGR2RGB))
   ax.set_axis_off()
 
 seg_dancing_man_frame1_file_path = seg_dancing_man_dir_path + "/" + dancing_man_frame1_name
 seg_dancing_man_frame2_file_path = seg_dancing_man_dir_path + "/" + dancing_man_frame2_name
-seg_dancing_man1 = cv2.cvtColor(cv2.imread(seg_dancing_man_frame1_file_path), cv2.COLOR_BGR2RGB)
-seg_dancing_man2 = cv2.cvtColor(cv2.imread(seg_dancing_man_frame2_file_path), cv2.COLOR_BGR2RGB)
+seg_dancing_man1 = cv2.imread(seg_dancing_man_frame1_file_path)
+seg_dancing_man2 = cv2.imread(seg_dancing_man_frame2_file_path)
 
 fig = plt.figure(figsize=(10,15))
 seg_dancing_man_images = [seg_dancing_man1, seg_dancing_man2]
 for i,file in enumerate(seg_dancing_man_images):
   ax = fig.add_subplot(1, len(seg_dancing_man_images),i+1)
-  ax.imshow(seg_dancing_man_images[i])
+  ax.imshow(cv2.cvtColor(seg_dancing_man_images[i], cv2.COLOR_BGR2RGB))
   ax.set_axis_off()
 
 # %% Q2.4
@@ -187,7 +194,7 @@ add_fg_image(pink_floyd_bg_img, roi_fg, roi_fg_mask=seg_hand_mask, y_offset=hand
 #ax.imshow(cv2.cvtColor(roi_bg, cv2.COLOR_BGR2RGB))
 #ax.set_axis_off()
 #ax = fig.add_subplot(1,1,1)
-#ax.imshow(cv2.cvtColor(seg_hsv_hand_img, cv2.COLOR_HSV2RGB))
+#ax.imshow(seg_hand_mask, cmap="gray")
 #ax.set_axis_off()
 
 # crop, scale and add dancing man + self images to background and create the clip
@@ -198,26 +205,34 @@ create_dir(final_video_frames_dir_path)
 dancing_man_files = sorted(glob.glob(os.path.join(dancing_man_dir_path, '*.jpg')))
 number_of_dancing_man_files = len(dancing_man_files)
 
+self_files = sorted(glob.glob(os.path.join(self_dir_path, '*.jpg')))
 seg_self_files = sorted(glob.glob(os.path.join(segmented_self_dir_path, '*.jpg')))
 number_of_seg_self_files = len(seg_self_files)
 
-for i, seg_self_filename in enumerate(seg_self_files):
+self_scale_factor_percentage = 30
+self_ofsset_x = 10
+self_ofsset_y = 10
+dancing_man_offset_x = 600
+dancing_man_offset_y = 200
+
+for i, _ in enumerate(seg_self_files):
 
   curr_bg_img = pink_floyd_bg_img.copy()
 
-  # read segmented self image
-  seg_self_img = cv2.cvtColor(cv2.imread(seg_self_filename), cv2.COLOR_BGR2RGB)
+  # read segmented self + self images
+  self_img = cv2.imread(self_files[i])
+  seg_self_img = cv2.imread(seg_self_files[i])
 
   # scale self segmented image
-  scaled_seg_self_img = scale_image(seg_self_img,30)
+  scaled_self_img = scale_image(self_img,self_scale_factor_percentage)
+  scaled_seg_self_img = scale_image(seg_self_img,self_scale_factor_percentage)
 
   # add self segmented image to background
-  x_offset = 10
-  y_offset = 10
-  scaled_seg_self_img_gray = cv2.cvtColor(scaled_seg_self_img, cv2.COLOR_RGB2GRAY)
+  scaled_seg_self_img_gray = cv2.cvtColor(scaled_seg_self_img, cv2.COLOR_BGR2GRAY)
   ret, mask = cv2.threshold(scaled_seg_self_img_gray, 10, 255, cv2.THRESH_BINARY)
-  add_fg_image(curr_bg_img, scaled_seg_self_img, mask, y_offset, x_offset)
+  add_fg_image(curr_bg_img, scaled_seg_self_img, mask, self_ofsset_y, self_ofsset_x)
 
+  # read dancing man image
   str_index_dancing_man_filename = str(i%number_of_dancing_man_files).zfill(4)
   dancing_man_filename = os.path.join(dancing_man_dir_path, str_index_dancing_man_filename + ".jpg")
   dancing_man_img = cv2.imread(dancing_man_filename)
@@ -238,20 +253,21 @@ for i, seg_self_filename in enumerate(seg_self_files):
   seg_dancing_man_img = cv2.cvtColor(seg_hsv_dancing_man_img, cv2.COLOR_HSV2BGR)
 
   # add to background
-  x_offset = 600
-  y_offset = 200
-  add_fg_image(curr_bg_img, seg_dancing_man_img, mask, y_offset, x_offset)
+  add_fg_image(curr_bg_img, seg_dancing_man_img, mask, dancing_man_offset_y, dancing_man_offset_x)
 
-  path, fname = os.path.split(seg_self_filename)
+  path, fname = os.path.split(seg_self_files[i])
   cv2.imwrite(os.path.join(final_video_frames_dir_path, fname), curr_bg_img)
 
 # create the final video from images
 image_seq_to_video(final_video_frames_dir_path, output_path='./output/video.mp4')
 
-fig = plt.figure(figsize=(10,15))
-ax = fig.add_subplot(1,1,1)
-ax.imshow(cv2.cvtColor(curr_bg_img, cv2.COLOR_BGR2RGB))
-ax.set_axis_off()
+#fig = plt.figure(figsize=(10,15))
+#ax = fig.add_subplot(1,1,1)
+#ax.imshow(scaled_seg_self_img_gray, cmap="gray")
+#ax.imshow(scaled_seg_self_img)
+#ax.imshow(cv2.cvtColor(curr_bg_img, cv2.COLOR_BGR2RGB))
+#ax.set_axis_off()
+
 
 
 

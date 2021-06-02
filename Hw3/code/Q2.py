@@ -40,6 +40,8 @@ for i,file in enumerate(self_images):
   ax.imshow(cv2.cvtColor(self_images[i], cv2.COLOR_BGR2RGB))
   ax.set_axis_off()
 
+plt.show()
+
 # %% Q2.2
 
 # Prepearing the model
@@ -86,6 +88,8 @@ for i,file in enumerate(seg_self_images):
   ax = fig.add_subplot(len(seg_self_images), 1, i+1)
   ax.imshow(cv2.cvtColor(seg_self_images[i], cv2.COLOR_BGR2RGB))
   ax.set_axis_off()
+
+plt.show()
 
 # %% Q2.3
 
@@ -144,6 +148,7 @@ for i,file in enumerate(dancing_man_images):
   ax = fig.add_subplot(len(dancing_man_images), 2, 2*i+2)
   ax.imshow(cv2.cvtColor(seg_dancing_man_images[i], cv2.COLOR_BGR2RGB))
   ax.set_axis_off()
+plt.show()
 
 # %% Q2.4
 
@@ -257,4 +262,5 @@ for i,file in enumerate(video_images):
   ax.imshow(cv2.cvtColor(video_images[i], cv2.COLOR_BGR2RGB))
   ax.set_axis_off()
 
+plt.show()
 

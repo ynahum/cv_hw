@@ -24,18 +24,19 @@ create_dir(self_dir_path)
 video_to_image_seq(self_mp4_file_path, self_dir_path)
 
 # Showing 2 frames
+
 self_frame1_name = "0050.jpg"
 self_frame2_name = "0280.jpg"
 
-self_frame1_file_path = self_dir_path + "/" + self_frame1_name
-self_frame2_file_path = self_dir_path + "/" + self_frame2_name
+self_frame1_file_path = os.path.join(self_dir_path, self_frame1_name)
+self_frame2_file_path = os.path.join(self_dir_path, self_frame2_name)
 self1 = cv2.imread(self_frame1_file_path)
 self2 = cv2.imread(self_frame2_file_path)
 
-fig = plt.figure(figsize=(10,15))
+fig = plt.figure(figsize=(15,10))
 self_images = [self1, self2]
 for i,file in enumerate(self_images):
-  ax = fig.add_subplot(1, len(self_images),i+1)
+  ax = fig.add_subplot(len(self_images), 1, i+1)
   ax.imshow(cv2.cvtColor(self_images[i], cv2.COLOR_BGR2RGB))
   ax.set_axis_off()
 
@@ -72,22 +73,17 @@ for i, self_file in enumerate(self_files):
   human_seg_self_img = get_human_segment(self_img, seg_self_img)
   cv2.imwrite(os.path.join(segmented_self_dir_path, fname), human_seg_self_img)
 
-#fig = plt.figure(figsize=(10,15))
-#ax = fig.add_subplot(1,1,1)
-#ax.imshow(cv2.cvtColor(human_seg_self_img, cv2.COLOR_BGR2RGB))
-#ax.set_axis_off()
-
 # Showing the 2 segmented frames
 
-seg_self_frame1_file_path = segmented_self_dir_path + "/" + self_frame1_name
-seg_self_frame2_file_path = segmented_self_dir_path + "/" + self_frame2_name
+seg_self_frame1_file_path = os.path.join(segmented_self_dir_path, self_frame1_name)
+seg_self_frame2_file_path = os.path.join(segmented_self_dir_path, self_frame2_name)
 seg_self1 = cv2.imread(seg_self_frame1_file_path)
 seg_self2 = cv2.imread(seg_self_frame2_file_path)
 
-fig = plt.figure(figsize=(10,15))
+fig = plt.figure(figsize=(15,10))
 seg_self_images = [seg_self1, seg_self2]
 for i,file in enumerate(seg_self_images):
-  ax = fig.add_subplot(1, len(seg_self_images),i+1)
+  ax = fig.add_subplot(len(seg_self_images), 1, i+1)
   ax.imshow(cv2.cvtColor(seg_self_images[i], cv2.COLOR_BGR2RGB))
   ax.set_axis_off()
 
@@ -126,27 +122,26 @@ for filename in dancing_man_files:
 
 dancing_man_frame1_name = "0100.jpg"
 dancing_man_frame2_name = "0200.jpg"
-dancing_man_frame1_file_path = dancing_man_dir_path + "/" + dancing_man_frame1_name
-dancing_man_frame2_file_path = dancing_man_dir_path + "/" + dancing_man_frame2_name
+
+dancing_man_frame1_file_path = os.path.join(dancing_man_dir_path, dancing_man_frame1_name)
+dancing_man_frame2_file_path = os.path.join(dancing_man_dir_path, dancing_man_frame2_name)
 dancing_man1 = cv2.imread(dancing_man_frame1_file_path)
 dancing_man2 = cv2.imread(dancing_man_frame2_file_path)
 
-fig = plt.figure(figsize=(10,15))
-dancing_man_images = [dancing_man1, dancing_man2]
-for i,file in enumerate(dancing_man_images):
-  ax = fig.add_subplot(1, len(dancing_man_images),i+1)
-  ax.imshow(cv2.cvtColor(dancing_man_images[i], cv2.COLOR_BGR2RGB))
-  ax.set_axis_off()
 
-seg_dancing_man_frame1_file_path = seg_dancing_man_dir_path + "/" + dancing_man_frame1_name
-seg_dancing_man_frame2_file_path = seg_dancing_man_dir_path + "/" + dancing_man_frame2_name
+seg_dancing_man_frame1_file_path = os.path.join(seg_dancing_man_dir_path, dancing_man_frame1_name)
+seg_dancing_man_frame2_file_path = os.path.join(seg_dancing_man_dir_path, dancing_man_frame2_name)
 seg_dancing_man1 = cv2.imread(seg_dancing_man_frame1_file_path)
 seg_dancing_man2 = cv2.imread(seg_dancing_man_frame2_file_path)
 
-fig = plt.figure(figsize=(10,15))
+fig = plt.figure(figsize=(18,12))
+dancing_man_images = [dancing_man1, dancing_man2]
 seg_dancing_man_images = [seg_dancing_man1, seg_dancing_man2]
-for i,file in enumerate(seg_dancing_man_images):
-  ax = fig.add_subplot(1, len(seg_dancing_man_images),i+1)
+for i,file in enumerate(dancing_man_images):
+  ax = fig.add_subplot(len(dancing_man_images), 2, 2*i+1)
+  ax.imshow(cv2.cvtColor(dancing_man_images[i], cv2.COLOR_BGR2RGB))
+  ax.set_axis_off()
+  ax = fig.add_subplot(len(dancing_man_images), 2, 2*i+2)
   ax.imshow(cv2.cvtColor(seg_dancing_man_images[i], cv2.COLOR_BGR2RGB))
   ax.set_axis_off()
 
@@ -175,7 +170,6 @@ def add_fg_image(bg_img, roi_fg, roi_fg_mask, y_offset, x_offset):
 
 hand_file_path = "./my_data/hand.jpg"
 hand_img = cv2.imread(hand_file_path)
-#print('Original hand dimensions : ',hand_img.shape)
 resized_hand_img = scale_image(hand_img, scale_percent=60)
 bg_hsv_low = (0,0,238)
 bg_hsv_high = (255,14,255)
@@ -185,17 +179,6 @@ roi_fg = cv2.cvtColor(seg_hsv_hand_img, cv2.COLOR_HSV2BGR)
 hand_x_offset = 600
 hand_y_offset = 300
 add_fg_image(pink_floyd_bg_img, roi_fg, roi_fg_mask=seg_hand_mask, y_offset=hand_y_offset, x_offset=hand_x_offset)
-
-#fig = plt.figure(figsize=(10,15))
-#ax = fig.add_subplot(1,1,1)
-#ax.imshow(cv2.cvtColor(pink_floyd_bg_img, cv2.COLOR_BGR2RGB))
-#ax.set_axis_off()
-#ax = fig.add_subplot(1,1,1)
-#ax.imshow(cv2.cvtColor(roi_bg, cv2.COLOR_BGR2RGB))
-#ax.set_axis_off()
-#ax = fig.add_subplot(1,1,1)
-#ax.imshow(seg_hand_mask, cmap="gray")
-#ax.set_axis_off()
 
 # crop, scale and add dancing man + self images to background and create the clip
 
@@ -243,7 +226,6 @@ for i, _ in enumerate(seg_self_files):
 
   # scale
   scaled_dancing_man_img = scale_image(cropped_dancing_man_img,30)
-  #print(scaled_dancing_man_img.shape)
 
   # color segment
   hsv_dancing_man_img = cv2.cvtColor(scaled_dancing_man_img, cv2.COLOR_BGR2HSV)
@@ -261,13 +243,18 @@ for i, _ in enumerate(seg_self_files):
 # create the final video from images
 image_seq_to_video(final_video_frames_dir_path, output_path='./output/video.mp4')
 
-#fig = plt.figure(figsize=(10,15))
-#ax = fig.add_subplot(1,1,1)
-#ax.imshow(scaled_seg_self_img_gray, cmap="gray")
-#ax.imshow(scaled_seg_self_img)
-#ax.imshow(cv2.cvtColor(curr_bg_img, cv2.COLOR_BGR2RGB))
-#ax.set_axis_off()
+# Showing 2 frames
 
+video_frame1_file_path = os.path.join(final_video_frames_dir_path, self_frame1_name)
+video_frame2_file_path = os.path.join(final_video_frames_dir_path, self_frame2_name)
+vid1 = cv2.imread(video_frame1_file_path)
+vid2 = cv2.imread(video_frame2_file_path)
 
+fig = plt.figure(figsize=(15,15))
+video_images = [vid1, vid2]
+for i,file in enumerate(video_images):
+  ax = fig.add_subplot(len(video_images), 1, i+1)
+  ax.imshow(cv2.cvtColor(video_images[i], cv2.COLOR_BGR2RGB))
+  ax.set_axis_off()
 
 

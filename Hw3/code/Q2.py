@@ -13,12 +13,15 @@ def create_dir(path):
   if not os.path.exists(path):
     os.makedirs(path)
 
+output_path='../output'
+create_dir(output_path)
+
 # %% Q2.1
 
 # Convert .mp4 video to .jpg frames 
 
 self_mp4_file_path = "./my_data/self.mp4"
-self_dir_path = "./output/self_frames"
+self_dir_path = output_path + "/self_frames"
 
 create_dir(self_dir_path)
 video_to_image_seq(self_mp4_file_path, self_dir_path)
@@ -52,7 +55,7 @@ device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 model=model.to(device)
 
 # Deep segmentation
-segmented_self_dir_path = "./output/segmented_self_frames"
+segmented_self_dir_path = output_path + "/segmented_self_frames"
 create_dir(segmented_self_dir_path)
 
 def get_human_segment(img, seg_img):
@@ -92,13 +95,13 @@ plt.show()
 
 # Convert .mp4 video to .jpg frames
 
-dancing_man_dir_path = "./output/dancing_man_frames"
+dancing_man_dir_path = output_path + "/dancing_man_frames"
 create_dir(dancing_man_dir_path)
 video_to_image_seq("./data/dancing_man_model.mp4", dancing_man_dir_path)
 
 # semantic segmentation using color segmentation
 
-seg_dancing_man_dir_path = "./output/segmented_dancing_man_frames"
+seg_dancing_man_dir_path = output_path + "/segmented_dancing_man_frames"
 create_dir(seg_dancing_man_dir_path)
 
 dancing_man_files = sorted(glob.glob(os.path.join(dancing_man_dir_path, '*.jpg')))
@@ -184,7 +187,7 @@ add_fg_image(pink_floyd_bg_img, roi_fg, roi_fg_mask=seg_hand_mask, y_offset=hand
 
 # crop, scale and add dancing man + self images to background and create the clip
 
-final_video_frames_dir_path = "./output/final_video_frames"
+final_video_frames_dir_path = output_path + "/final_video_frames"
 create_dir(final_video_frames_dir_path)
 
 dancing_man_files = sorted(glob.glob(os.path.join(dancing_man_dir_path, '*.jpg')))
@@ -265,7 +268,7 @@ def my_image_seq_to_video(imgs_path, output_path='./video.mp4', fps=15.0):
     print("saved video @ ", output)
 
 # create the final video from images
-my_image_seq_to_video(final_video_frames_dir_path, output_path='./output/video.mp4')
+my_image_seq_to_video(final_video_frames_dir_path, output_path=output_path + '/video.mp4')
 
 # Showing 2 frames
 

@@ -24,7 +24,6 @@ create_dir(self_dir_path)
 video_to_image_seq(self_mp4_file_path, self_dir_path)
 
 # Showing 2 frames
-
 self_frame1_name = "0050.jpg"
 self_frame2_name = "0280.jpg"
 
@@ -39,7 +38,6 @@ for i,file in enumerate(self_images):
   ax = fig.add_subplot(len(self_images), 1, i+1)
   ax.imshow(cv2.cvtColor(self_images[i], cv2.COLOR_BGR2RGB))
   ax.set_axis_off()
-
 plt.show()
 
 # %% Q2.2
@@ -88,7 +86,6 @@ for i,file in enumerate(seg_self_images):
   ax = fig.add_subplot(len(seg_self_images), 1, i+1)
   ax.imshow(cv2.cvtColor(seg_self_images[i], cv2.COLOR_BGR2RGB))
   ax.set_axis_off()
-
 plt.show()
 
 # %% Q2.3
@@ -245,8 +242,30 @@ for i, _ in enumerate(seg_self_files):
   path, fname = os.path.split(seg_self_files[i])
   cv2.imwrite(os.path.join(final_video_frames_dir_path, fname), curr_bg_img)
 
+def my_image_seq_to_video(imgs_path, output_path='./video.mp4', fps=15.0):
+    output = output_path
+    img_array = []
+    for filename in sorted(glob.glob(os.path.join(imgs_path, '*.jpg'))):
+        img = cv2.imread(filename)
+        height, width, layers = img.shape
+        #img = cv2.resize(img, (width, height))
+        #height, width, layers = img.shape
+        size = (width, height)
+        img_array.append(img)
+
+    print(size)
+    print("writing video...")
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Be sure to use lower case
+    out = cv2.VideoWriter(output, fourcc, fps, size)
+    # out = cv2.VideoWriter('project.avi', cv2.VideoWriter_fourcc(*'DIVX'), 15, size)
+
+    for i in range(len(img_array)):
+        out.write(img_array[i])
+    out.release()
+    print("saved video @ ", output)
+
 # create the final video from images
-image_seq_to_video(final_video_frames_dir_path, output_path='./output/video.mp4')
+my_image_seq_to_video(final_video_frames_dir_path, output_path='./output/video.mp4')
 
 # Showing 2 frames
 
@@ -261,6 +280,6 @@ for i,file in enumerate(video_images):
   ax = fig.add_subplot(len(video_images), 1, i+1)
   ax.imshow(cv2.cvtColor(video_images[i], cv2.COLOR_BGR2RGB))
   ax.set_axis_off()
-
 plt.show()
+
 

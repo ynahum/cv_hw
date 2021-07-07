@@ -81,7 +81,7 @@ def ShiftH(im1, H):
     HShifted = H @ tMatrix
     return HShifted, out_size,corners
 
-def ResizeImg(img1, wrap_img2,corners):
+def ResizeImg(img1, wrap_img2, corners):
     # corners = (Left, Right, Top, Bottom)
     y = max(corners[3], img1.shape[0]) - min(corners[2], 0)
     x = max(corners[1], img1.shape[1]) - min(corners[0], 0)
@@ -94,41 +94,59 @@ def ResizeImg(img1, wrap_img2,corners):
     return np.uint8(im1_full), np.uint8(warp_im2_full)
 
 # HW functions:
-def getPoints(im1,im2,N):
-    print('Select ' + str(N) + ' points')
+def getPoints(im1,im2,N,im1_title=None, im2_title=None, get_from_user=True):
+
     plt.figure()
-    plt.subplot(1,2,1)
+    plt.subplot(1, 2, 1)
+
     plt.imshow(im1)
-    plt.title('incline_L')
-    p1 = np.transpose(np.array(plt.ginput(n=N,timeout=20)))
+    if im1_title != None:
+        plt.title(im1_title)
+    if get_from_user:
+        print('Select ' + str(N) + ' points')
+        p1 = np.transpose(np.array(plt.ginput(n=N,timeout=0)))
+    else:
+        p1 = np.array([[451.74341398, 506.34865591, 609.95860215, 702.36747312, 517.54973118],
+            [110.99205578, 124.99339987, 183.79904503, 479.22740524, 437.22337298]])
+    print(f"p1 points: {p1}")
     plt.scatter(np.round(p1[0,:]),np.round(p1[1,:]),c = 'r')
     for i in range(p1.shape[1]):
         plt.annotate(str(i+1), (p1[0,i], p1[1,i]))
+
     plt.subplot(1,2,2)
     plt.imshow(im2)
-    plt.title('incline_R')
-    p2 = np.transpose(np.array(plt.ginput(n=N,timeout=20)))
+    if im2_title != None:
+        plt.title(im2_title)
+    if get_from_user:
+        p2 = np.transpose(np.array(plt.ginput(n=N,timeout=0)))
+    else:
+        p2 = np.array([[119.62903226, 177.8344086 , 291.09892473, 391.77849462,201.4311828 ],
+            [152.10957527, 167.84075806, 233.91172581, 520.21925269, 498.19559677]])
+    print(f"p2 points: {p2}")
     plt.scatter(np.round(p2[0,:]),np.round(p2[1,:]),c = 'r')
     for i in range(p2.shape[1]):
         plt.annotate(str(i+1), (p2[0,i], p2[1,i]))
+
     return p1,p2
 
 def computeH(p1, p2):
     assert (p1.shape[1] == p2.shape[1])
     assert (p1.shape[0] == 2)
-    A = np.zeros((2*p1.shape[1],9))
-    A[np.arange(0,2*p1.shape[1],2),0] = p2[0,:]
-    A[np.arange(0,2*p1.shape[1],2),1] = p2[1,:]
-    A[np.arange(0,2*p1.shape[1],2),2] = 1
-    A[np.arange(1,2*p1.shape[1],2),3] = p2[0,:]
-    A[np.arange(1,2*p1.shape[1],2),4] = p2[1,:]
-    A[np.arange(1,2*p1.shape[1],2),5] = 1
-    A[np.arange(0,2*p1.shape[1],2),6] = - p2[0,:] * p1[0,:]
-    A[np.arange(1,2*p1.shape[1],2),6] = - p2[0,:] * p1[1,:]
-    A[np.arange(0,2*p1.shape[1],2),7] = - p2[1,:] * p1[0,:]
-    A[np.arange(1,2*p1.shape[1],2),7] = - p2[1,:] * p1[1,:]
-    A[np.arange(0,2*p1.shape[1],2),8] = - p1[0,:]
-    A[np.arange(1,2*p1.shape[1],2),8] = - p1[1,:]
+    A_cols = 9
+    A_rows = 2*p1.shape[1]
+    A = np.zeros((A_rows,A_cols))
+    A[np.arange(0,A_rows,2),0] = p2[0,:]
+    A[np.arange(0,A_rows,2),1] = p2[1,:]
+    A[np.arange(0,A_rows,2),2] = 1
+    A[np.arange(1,A_rows,2),3] = p2[0,:]
+    A[np.arange(1,A_rows,2),4] = p2[1,:]
+    A[np.arange(1,A_rows,2),5] = 1
+    A[np.arange(0,A_rows,2),6] = - p2[0,:] * p1[0,:]
+    A[np.arange(1,A_rows,2),6] = - p2[0,:] * p1[1,:]
+    A[np.arange(0,A_rows,2),7] = - p2[1,:] * p1[0,:]
+    A[np.arange(1,A_rows,2),7] = - p2[1,:] * p1[1,:]
+    A[np.arange(0,A_rows,2),8] = - p1[0,:]
+    A[np.arange(1,A_rows,2),8] = - p1[1,:]
     A_squared = np.transpose(A) @ A
     eigen,vectors = np.linalg.eig(A_squared)
     H2to1 = np.reshape(vectors[:,-1],(3,3))
@@ -173,21 +191,29 @@ if __name__ == '__main__':
     print('my_homography')
     im1 =  cv2.cvtColor(cv2.imread('data/incline_L.png'), cv2.COLOR_BGR2RGB)
     im2 = cv2.cvtColor(cv2.imread('data/incline_R.png'), cv2.COLOR_BGR2RGB)
+
+    # Q1.1
     plot_clean_image = False
     if plot_clean_image:
         plotCleanImages(im1,im2,title1='incline_L',title2='incline_R')
     N = 5
-    p1,p2 = getPoints(im1,im2,N=N)
+    p1,p2 = getPoints(im1,im2,N=N,im1_title='incline_L',im2_title='incline_R',get_from_user=False)
+
+    # Q1.2
     H2to1 = computeH(p1, p2)
     p2reconstructed = evaluateHmatrix(p1,p2,H2to1)
     PlotEstimatedTransformation(im1,im2,p1,p2,p2reconstructed)
     H2to1Shifted,out_size,corners = ShiftH(im1, H2to1)
     H = H2to1Shifted.copy()
-    plot_both_interpolations = False
+
+    # Q1.3
     warp_im1_linear = warpH(im1, H2to1Shifted, out_size)
+    plot_both_interpolations = False
     if plot_both_interpolations:
         warp_im1_cubic = warpH(im1, H2to1Shifted, out_size,kind='cubic')
         plotCleanImages(warp_im1_linear,warp_im1_cubic,title1='Linear interpolation',title2='Cubic interpolation')
+
+    # Q1.4
     im1_full, warp_im2_full = ResizeImg(im2, warp_im1_linear,corners)
     panoImg = imageStitching(im1_full, warp_im2_full)
     plt.figure()

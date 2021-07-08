@@ -58,7 +58,7 @@ def evaluateHmatrix(p1,p2,H2to1):
     return p2temp
 
 
-def PlotEstimatedTransformation(im1, im2, im1_title, im2_title, p1, p2, p2reconstructed):
+def plotEstimatedTransformation(im1, im2, im1_title, im2_title, p1, p2, p2reconstructed):
     plt.figure()
     plt.subplot(1,2,1)
     plt.imshow(im1)
@@ -75,7 +75,7 @@ def PlotEstimatedTransformation(im1, im2, im1_title, im2_title, p1, p2, p2recons
     plt.axis('off')
 
 
-def GetCornersAfterTransform(im1,H):
+def getCornersAfterTransform(im1,H):
     corners = np.array([[0, 0,                im1.shape[1],   im1.shape[1]],
                         [0, im1.shape[0],     0,              im1.shape[0]],
                         [1, 1,                1,              1]])
@@ -87,8 +87,8 @@ def GetCornersAfterTransform(im1,H):
     return LT, LB, RT, RB
 
 
-def ShiftH(im1, H):
-    LT, LB, RT, RB = GetCornersAfterTransform(im1, H)
+def shiftH(im1, H):
+    LT, LB, RT, RB = getCornersAfterTransform(im1, H)
     Left = np.int64(np.min((LT[0], LB[0])))
     Right = np.int64(np.max((RT[0], RB[0])))    
     Top = np.int64(np.min((RT[1], LT[1])))    
@@ -100,7 +100,7 @@ def ShiftH(im1, H):
     return HShifted, out_size,corners
 
 
-def ResizeImg(img1, wrap_img2, corners):
+def resizeImg(img1, wrap_img2, corners):
     # corners = (Left, Right, Top, Bottom)
     y = max(corners[3], img1.shape[0]) - min(corners[2], 0)
     x = max(corners[1], img1.shape[1]) - min(corners[0], 0)
@@ -123,8 +123,8 @@ def Q1_2_compute_H(im1, im2, im1_title, im2_title, p1, p2, plot_estimated_transf
     H2to1 = computeH(p1, p2)
     p2reconstructed = evaluateHmatrix(p1, p2, H2to1)
     if plot_estimated_transform:
-        PlotEstimatedTransformation(im1, im2, im1_title, im2_title, p1, p2, p2reconstructed)
-    H2to1Shifted,out_size,corners = ShiftH(im1, H2to1)
+        plotEstimatedTransformation(im1, im2, im1_title, im2_title, p1, p2, p2reconstructed)
+    H2to1Shifted,out_size,corners = shiftH(im1, H2to1)
     H = H2to1Shifted.copy()
     return H,out_size,corners
 
@@ -143,11 +143,18 @@ def Q1_3_warp(im1, H, out_size, plot_warp=True, run_both_interp_methods=False):
 
 
 def Q1_4_stitch(img2, warped_img1, corners, plot_stitch=True):
-    im1_full, warp_im2_full = ResizeImg(img2, warped_img1, corners)
+    im1_full, warp_im2_full = resizeImg(img2, warped_img1, corners)
     panoImg = imageStitching(im1_full, warp_im2_full)
     if plot_stitch:
         plotImage(panoImg,'Image  stitching')
     return im1_full, warp_im2_full
+
+def Q1_5_SIFT_matching(im1, im2, N, im1_title, im2_title, plot_matches=True):
+    p1, p2 = getPoints_SIFT(im1,im2,N,plot_matches=plot_matches)
+    H, out_size, corners = Q1_2_compute_H(im1, im2, im1_title, im2_title, p1, p2, plot_estimated_transform=True)
+    warp_im1_linear = Q1_3_warp(im1, H, out_size, plot_warp=True, run_both_interp_methods=False)
+    Q1_4_stitch(im2, warp_im1_linear, corners)
+
 
 
 #---------------------------
@@ -247,7 +254,7 @@ def ransacH(matches, locs1, locs2, nIter, tol):
     return bestH
 
 
-def getPoints_SIFT(im1,im2):
+def getPoints_SIFT(im1, im2, N=5, plot_matches=False):
 
     # Initiate SIFT detector
     sift = cv2.SIFT_create()
@@ -261,14 +268,28 @@ def getPoints_SIFT(im1,im2):
     matches = bf.knnMatch(des1, des2, k=2)
 
     # Apply ratio test
-    #good = []
-    #for m, n in matches:
-    #    if m.distance < 0.75 * n.distance:
-    #        good.append([m])
+    good = []
+    for m, n in matches:
+        if m.distance < 0.75 * n.distance:
+            good.append(m)
+
+    distance = lambda m: m.distance
+    good = sorted(good, key=distance)
+
+    good_size_to_take = min(len(good),N)
+    good_lists = []
+    for i in range(good_size_to_take):
+        good_lists.append([good[i]])
+
+    p1 = [ kp1[m.queryIdx].pt for m in good[:good_size_to_take] ]
+    p1 = np.array([*p1]).T
+    p2 = [ kp2[m.trainIdx].pt for m in good[:good_size_to_take] ]
+    p2 = np.array([*p2]).T
 
     # cv.drawMatchesKnn expects list of lists as matches.
-    #img3 = cv2.drawMatchesKnn(im1, kp1, im2, kp2, good, None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
-    #plt.imshow(img3), plt.show()
+    if plot_matches:
+        img3 = cv2.drawMatchesKnn(im1, kp1, im2, kp2, good_lists[:], None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+        plotImage(img3,'SIFT KNN matches')
 
     return p1,p2
 
@@ -281,19 +302,19 @@ if __name__ == '__main__':
 
     im1_title = 'incline_L'
     im2_title = 'incline_R'
+    N = 5
 
     # Q1.1
-    N = 5
-    p1, p2 = Q1_1_get_points(im1, im2, N, im1_title, im2_title, plot_images=True, get_from_user=False)
+    #p1, p2 = Q1_1_get_points(im1, im2, N, im1_title, im2_title, plot_images=True, get_from_user=False)
 
     # Q1.2
-    H, out_size, corners = Q1_2_compute_H(im1, im2, im1_title, im2_title, p1, p2, plot_estimated_transform=True)
+    #H, out_size, corners = Q1_2_compute_H(im1, im2, im1_title, im2_title, p1, p2, plot_estimated_transform=True)
 
     # Q1.3
-    warp_im1_linear = Q1_3_warp(im1, H, out_size, plot_warp=True, run_both_interp_methods=False)
+    #warp_im1_linear = Q1_3_warp(im1, H, out_size, plot_warp=True, run_both_interp_methods=False)
 
     # Q1.4
-    im1_full, warp_im2_full = Q1_4_stitch(im2, warp_im1_linear, corners)
+    #im1_full, warp_im2_full = Q1_4_stitch(im2, warp_im1_linear, corners)
 
     # Q1.5
-    
+    Q1_5_SIFT_matching(im1, im2, N, im1_title, im2_title, plot_matches=False)

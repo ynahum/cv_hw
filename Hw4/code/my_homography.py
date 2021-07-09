@@ -317,4 +317,4 @@ if __name__ == '__main__':
     #im1_full, warp_im2_full = Q1_4_stitch(im2, warp_im1_linear, corners)
 
     # Q1.5
-    Q1_5_SIFT_matching(im1, im2, N, im1_title, im2_title, plot_matches=False)
+    Q1_5_SIFT_matching(im1, im2, N, im1_title, im2_title, plot_matches=True)

@@ -97,20 +97,108 @@ def shiftH(im1, H):
     out_size = (Bottom - Top, Right - Left)
     tMatrix = np.array([[1, 0, Left],[0, 1, Top],[0, 0, 1]])
     HShifted = H @ tMatrix
-    return HShifted, out_size,corners
+    return HShifted, out_size, corners
 
 
 def resizeImg(img1, wrap_img2, corners):
     # corners = (Left, Right, Top, Bottom)
     y = max(corners[3], img1.shape[0]) - min(corners[2], 0)
     x = max(corners[1], img1.shape[1]) - min(corners[0], 0)
-    warp_im2_full = np.zeros((y,x, 3))
+    warp_im2_full = np.zeros((y,x, 3), dtype='uint8')
     im2_warp_maskInd = np.where(wrap_img2 > 0)
     warp_im2_full[im2_warp_maskInd] = wrap_img2[im2_warp_maskInd]
-    im1_full = np.zeros(warp_im2_full.shape)
+    im1_full = np.zeros(warp_im2_full.shape, dtype='uint8')
     im1_maskInd = np.where(img1 > 0)
     im1_full[im1_maskInd[0] - corners[2], im1_maskInd[1] - corners[0], im1_maskInd[2]] = img1[im1_maskInd]
-    return np.uint8(im1_full), np.uint8(warp_im2_full)
+    return im1_full, warp_im2_full
+
+def resizePanorama(panorama_img, panorama_corners, warpped_img, warpped_corners):
+    left = min(panorama_corners[0], warpped_corners[0])
+    right = max(panorama_corners[1], warpped_corners[1])
+    top = min(panorama_corners[2], warpped_corners[2])
+    bottom = max(panorama_corners[3], warpped_corners[3])
+    next_panorama_corners = (left, right, top, bottom)
+    width = right - left
+    height = bottom - top
+    next_panorama_img_dims = (height, width, 3)
+    next_panorama_img = np.zeros(next_panorama_img_dims, dtype='uint8')
+    big_warpped_img = np.zeros(next_panorama_img_dims, dtype='uint8')
+    warpped_img_mask = np.where(warpped_img > 0)
+    warpped_left_offset = warpped_corners[0] - next_panorama_corners[0]
+    warpped_top_offset = warpped_corners[2] - next_panorama_corners[2]
+    big_warpped_img[warpped_img_mask[0] + warpped_top_offset,
+        warpped_img_mask[1] + warpped_left_offset,
+        warpped_img_mask[2]] = warpped_img[warpped_img_mask]
+    panorama_mask = np.where(panorama_img > 0)
+    panorama_left_offset = panorama_corners[0] - next_panorama_corners[0]
+    panorama_top_offset = panorama_corners[2] - next_panorama_corners[2]
+    next_panorama_img[panorama_mask[0] + panorama_top_offset,
+            panorama_mask[1] + panorama_left_offset,
+            panorama_mask[2]] = panorama_img[panorama_mask]
+    return big_warpped_img, next_panorama_img, next_panorama_corners
+
+
+def stitchImageList(imgs, manual_point_selection=False, N=4):
+
+    num_of_imgs = len(imgs)
+    anchor_img_idx = num_of_imgs // 2
+    anchor_to_start_warp_operations = anchor_img_idx
+    anchor_to_end_warp_operations = (num_of_imgs-1) - anchor_img_idx
+    anchor_to_start_done = False
+    anchor_to_end_done = False
+
+    list_of_H = []
+    for i in range(num_of_imgs):
+        list_of_H.append([])
+    anchor_H = np.eye(3)
+    list_of_H[anchor_img_idx] = anchor_H
+
+    curr_panorama_img = imgs[anchor_img_idx]
+    # corners = (Left, Right, Top, Bottom)
+    curr_panorama_corners = (0,curr_panorama_img.shape[1],0,curr_panorama_img.shape[0])
+    while not anchor_to_start_done or not anchor_to_end_done:
+        if not anchor_to_start_done:
+            increment_size = -1
+        else:
+            increment_size = 1
+
+        warp_img_idx = anchor_img_idx + increment_size
+        while warp_img_idx >= 0 and warp_img_idx < num_of_imgs:
+            base_to_warp_img_idx = warp_img_idx - increment_size
+            print(f"start:\n warp_img_idx: {warp_img_idx}\n base_to_warp_img_idx: {base_to_warp_img_idx}")
+
+            #warp
+            img_to_warp = imgs[warp_img_idx]
+            img_to_warp_against = imgs[base_to_warp_img_idx]
+            if manual_point_selection:
+                p1, p2 = getPoints(img_to_warp, img_to_warp_against, N=N)
+            else:
+                p1, p2 = getPoints_SIFT(img_to_warp, img_to_warp_against, N=N)
+
+            H = computeH(p1, p2)
+
+            H_against_anchor = H @ list_of_H[base_to_warp_img_idx]
+            list_of_H[warp_img_idx] = H_against_anchor
+
+            HShifted, out_size, warpped_corners = shiftH(img_to_warp, H)
+
+            warpped_img = warpH(img_to_warp, HShifted, out_size)
+
+            big_warpped_img, next_panorama_img, next_panorama_corners = \
+                resizePanorama(curr_panorama_img, curr_panorama_corners, warpped_img, warpped_corners)
+
+            curr_panorama_img = imageStitching(next_panorama_img, big_warpped_img)
+            curr_panorama_corners = next_panorama_corners
+
+            print(f"end warp {warp_img_idx}")
+            warp_img_idx += increment_size
+
+        if warp_img_idx < 0:
+            anchor_to_start_done = True
+        if warp_img_idx >= 0:
+            anchor_to_end_done = True
+
+    return curr_panorama_img
 
 
 def Q1_1_get_points(im1, im2, N, im1_title, im2_title, plot_images=True, get_from_user=True):
@@ -155,7 +243,9 @@ def Q1_5_SIFT_matching(im1, im2, N, im1_title, im2_title, plot_matches=True):
     warp_im1_linear = Q1_3_warp(im1, H, out_size, plot_warp=True, run_both_interp_methods=False)
     Q1_4_stitch(im2, warp_im1_linear, corners)
 
-
+def Q1_6_compare_manual_vs_SIFT_panorma_stitch(imgs, title, manual=False):
+    panorama_img = stitchImageList(imgs, manual_point_selection=manual)
+    plotImage(panorama_img, f"{title}")
 
 #---------------------------
 
@@ -317,4 +407,17 @@ if __name__ == '__main__':
     #im1_full, warp_im2_full = Q1_4_stitch(im2, warp_im1_linear, corners)
 
     # Q1.5
-    Q1_5_SIFT_matching(im1, im2, N, im1_title, im2_title, plot_matches=True)
+    #Q1_5_SIFT_matching(im1, im2, N, im1_title, im2_title, plot_matches=True)
+
+    # Q1.6
+    imgs = []
+    num_of_imgs_to_read = 5
+    for i in range(num_of_imgs_to_read):
+        img = cv2.cvtColor(cv2.imread('data/beach' + str(i+1) + '.jpg'), cv2.COLOR_BGR2RGB)
+        scale_percent = 40  # percent of original size
+        width = int(img.shape[1] * scale_percent / 100)
+        height = int(img.shape[0] * scale_percent / 100)
+        dim = (width, height)
+        scaled_img = cv2.resize(img, dim)
+        imgs.append(scaled_img)
+    Q1_6_compare_manual_vs_SIFT_panorma_stitch(imgs,"beach panorama, SIFT matching")

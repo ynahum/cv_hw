@@ -30,6 +30,18 @@ def plotTwoImages(im1,im2,title1,title2):
     plt.imshow(im2)
     plt.title(title2)
 
+def readAndScaleImageList(path, num_of_images_to_read, downscale_percent):
+    imgs = []
+    for i in range(num_of_images_to_read):
+        img = cv2.cvtColor(cv2.imread(path + str(i+1) + '.jpg'), cv2.COLOR_BGR2RGB)
+        width = int(img.shape[1] * downscale_percent / 100)
+        height = int(img.shape[0] * downscale_percent / 100)
+        dim = (width, height)
+        #print(f"downscale to {dim}")
+        scaled_img = cv2.resize(img, dim)
+        imgs.append(scaled_img)
+    return imgs
+
 
 def d2ToHomoginic(p):
     pHom = np.concatenate((p,np.ones((1,p.shape[1]))))
@@ -142,8 +154,6 @@ def stitchImageList(imgs, manual_point_selection=False, N=4):
 
     num_of_imgs = len(imgs)
     anchor_img_idx = num_of_imgs // 2
-    anchor_to_start_warp_operations = anchor_img_idx
-    anchor_to_end_warp_operations = (num_of_imgs-1) - anchor_img_idx
     anchor_to_start_done = False
     anchor_to_end_done = False
 
@@ -154,8 +164,8 @@ def stitchImageList(imgs, manual_point_selection=False, N=4):
     list_of_H[anchor_img_idx] = anchor_H
 
     curr_panorama_img = imgs[anchor_img_idx]
-    # corners = (Left, Right, Top, Bottom)
     curr_panorama_corners = (0,curr_panorama_img.shape[1],0,curr_panorama_img.shape[0])
+
     while not anchor_to_start_done or not anchor_to_end_done:
         if not anchor_to_start_done:
             increment_size = -1
@@ -165,24 +175,30 @@ def stitchImageList(imgs, manual_point_selection=False, N=4):
         warp_img_idx = anchor_img_idx + increment_size
         while warp_img_idx >= 0 and warp_img_idx < num_of_imgs:
             base_to_warp_img_idx = warp_img_idx - increment_size
-            print(f"start:\n warp_img_idx: {warp_img_idx}\n base_to_warp_img_idx: {base_to_warp_img_idx}")
+            print(f"start: warp_img_idx: {warp_img_idx} base_to_warp_img_idx: {base_to_warp_img_idx}")
 
-            #warp
             img_to_warp = imgs[warp_img_idx]
             img_to_warp_against = imgs[base_to_warp_img_idx]
             if manual_point_selection:
                 p1, p2 = getPoints(img_to_warp, img_to_warp_against, N=N)
             else:
-                p1, p2 = getPoints_SIFT(img_to_warp, img_to_warp_against, N=N)
+                p1, p2 = getPoints_SIFT(img_to_warp, img_to_warp_against, N=10, plot_matches=False)
 
             H = computeH(p1, p2)
-
             H_against_anchor = H @ list_of_H[base_to_warp_img_idx]
             list_of_H[warp_img_idx] = H_against_anchor
+            H_shifted, out_size, warpped_corners = shiftH(img_to_warp, H_against_anchor)
 
-            HShifted, out_size, warpped_corners = shiftH(img_to_warp, H)
+            if False:
+                print(f"p1={p1}")
+                print(f"p2={p2}")
+                print(f"H: {repr(H)}")
+                print(f"H_against_anchor: {repr(H_against_anchor)}")
+                print(f"H_shifted: {repr(H_shifted)}")
+                print(f"out_size: {repr(out_size)}")
+                print(f"warpped_corners: {repr(warpped_corners)}")
 
-            warpped_img = warpH(img_to_warp, HShifted, out_size)
+            warpped_img = warpH(img_to_warp, H_shifted, out_size)
 
             big_warpped_img, next_panorama_img, next_panorama_corners = \
                 resizePanorama(curr_panorama_img, curr_panorama_corners, warpped_img, warpped_corners)
@@ -192,6 +208,8 @@ def stitchImageList(imgs, manual_point_selection=False, N=4):
 
             print(f"end warp {warp_img_idx}")
             warp_img_idx += increment_size
+
+            #plotImage(curr_panorama_img,f"warp {warp_img_idx}")
 
         if warp_img_idx < 0:
             anchor_to_start_done = True
@@ -237,15 +255,16 @@ def Q1_4_stitch(img2, warped_img1, corners, plot_stitch=True):
         plotImage(panoImg,'Image  stitching')
     return im1_full, warp_im2_full
 
-def Q1_5_SIFT_matching(im1, im2, N, im1_title, im2_title, plot_matches=True):
-    p1, p2 = getPoints_SIFT(im1,im2,N,plot_matches=plot_matches)
-    H, out_size, corners = Q1_2_compute_H(im1, im2, im1_title, im2_title, p1, p2, plot_estimated_transform=True)
-    warp_im1_linear = Q1_3_warp(im1, H, out_size, plot_warp=True, run_both_interp_methods=False)
+def Q1_5_SIFT_matching(warp_im1, im2, N, warp_im1_title, im2_title, plot_matches=True):
+    p1, p2 = getPoints_SIFT(warp_im1,im2,N,plot_matches=plot_matches,knn_matcher=True)
+    H, out_size, corners = Q1_2_compute_H(warp_im1, im2, warp_im1_title, im2_title, p1, p2, plot_estimated_transform=True)
+    warp_im1_linear = Q1_3_warp(warp_im1, H, out_size, plot_warp=True, run_both_interp_methods=False)
     Q1_4_stitch(im2, warp_im1_linear, corners)
 
 def Q1_6_compare_manual_vs_SIFT_panorma_stitch(imgs, title, manual=False):
     panorama_img = stitchImageList(imgs, manual_point_selection=manual)
     plotImage(panorama_img, f"{title}")
+    return panorama_img
 
 #---------------------------
 
@@ -287,7 +306,6 @@ def getPoints(im1, im2, N, im1_title=None, im2_title=None, get_from_user=True):
 
     return p1,p2
 
-
 def computeH(p1, p2):
     assert (p1.shape[1] == p2.shape[1])
     assert (p1.shape[0] == 2)
@@ -307,8 +325,9 @@ def computeH(p1, p2):
     A[np.arange(0,A_rows,2),8] = - p1[0,:]
     A[np.arange(1,A_rows,2),8] = - p1[1,:]
     A_squared = np.transpose(A) @ A
-    eigen,vectors = np.linalg.eig(A_squared)
-    H2to1 = np.reshape(vectors[:,-1],(3,3))
+    eigen_values,eigen_vectors = np.linalg.eig(A_squared)
+    min_eigen_value_idx = np.abs(eigen_values).argmin()
+    H2to1 = np.reshape(eigen_vectors[:,min_eigen_value_idx],(3,3))
     return H2to1
 
 
@@ -344,44 +363,74 @@ def ransacH(matches, locs1, locs2, nIter, tol):
     return bestH
 
 
-def getPoints_SIFT(im1, im2, N=5, plot_matches=False):
+def getPoints_SIFT(im1, im2, N=4, plot_matches=False, knn_matcher=False, apply_ratio_test=True, ratio_test_multiplier=0.75):
 
-    # Initiate SIFT detector
-    sift = cv2.SIFT_create()
+    if knn_matcher:
+        # Initiate SIFT detector
+        sift = cv2.SIFT_create()
 
-    # find the keypoints and descriptors with SIFT
-    kp1, des1 = sift.detectAndCompute(im1, None)
-    kp2, des2 = sift.detectAndCompute(im2, None)
+        # find the keypoints and descriptors with SIFT
+        kp1, des1 = sift.detectAndCompute(im1, None)
+        kp2, des2 = sift.detectAndCompute(im2, None)
 
-    # BFMatcher with default params
-    bf = cv2.BFMatcher()
-    matches = bf.knnMatch(des1, des2, k=2)
+        # Default Brute Force Matcher
+        bf = cv2.BFMatcher()
+        matches = bf.knnMatch(des1, des2, k=2)
 
-    # Apply ratio test
-    good = []
-    for m, n in matches:
-        if m.distance < 0.75 * n.distance:
-            good.append(m)
+        # Apply ratio test
+        if apply_ratio_test:
+            good = []
+            for m, n in matches:
+                if m.distance < ratio_test_multiplier * n.distance:
+                    good.append(m)
+        else:
+            good = matches
 
-    distance = lambda m: m.distance
-    good = sorted(good, key=distance)
+        distance = lambda m: m.distance
+        good = sorted(good, key=distance)
 
-    good_size_to_take = min(len(good),N)
-    good_lists = []
-    for i in range(good_size_to_take):
-        good_lists.append([good[i]])
+        good_size_to_take = min(len(good), N)
+        good_lists = []
+        for i in range(good_size_to_take):
+            good_lists.append([good[i]])
 
-    p1 = [ kp1[m.queryIdx].pt for m in good[:good_size_to_take] ]
-    p1 = np.array([*p1]).T
-    p2 = [ kp2[m.trainIdx].pt for m in good[:good_size_to_take] ]
-    p2 = np.array([*p2]).T
+        p1 = [kp1[m.queryIdx].pt for m in good[:good_size_to_take]]
+        p1 = np.array([*p1]).T
+        p2 = [kp2[m.trainIdx].pt for m in good[:good_size_to_take]]
+        p2 = np.array([*p2]).T
 
-    # cv.drawMatchesKnn expects list of lists as matches.
-    if plot_matches:
-        img3 = cv2.drawMatchesKnn(im1, kp1, im2, kp2, good_lists[:], None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
-        plotImage(img3,'SIFT KNN matches')
+        # cv.drawMatchesKnn expects list of lists as matches.
+        if plot_matches:
+            img3 = cv2.drawMatchesKnn(im1, kp1, im2, kp2, good_lists[:], None,
+                                      flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+            plotImage(img3, 'SIFT KNN matches')
+    else:
+        # Initiate SIFT detector
+        sift = cv2.xfeatures2d.SIFT_create()
 
-    return p1,p2
+        # find the keypoints and descriptors with SIFT
+        kp1, des1 = sift.detectAndCompute(im1, None)
+        kp2, des2 = sift.detectAndCompute(im2, None)
+
+        # Brute Force Matcher
+        bf = cv2.BFMatcher(crossCheck=True)
+        matches = bf.match(des1, des2)
+
+        distance = lambda m: m.distance
+        matches = sorted(matches, key=distance)
+
+        good_size_to_take = min(len(matches), N)
+
+        p1 = [kp1[m.queryIdx].pt for m in matches[:good_size_to_take]]
+        p1 = np.array([*p1]).T
+        p2 = [kp2[m.trainIdx].pt for m in matches[:good_size_to_take]]
+        p2 = np.array([*p2]).T
+
+        if plot_matches:
+            img3 = cv2.drawMatches(im1, kp1, im2, kp2, matches[:good_size_to_take], None, flags=2)
+            plotImage(img3, 'SIFT matches')
+
+    return p1, p2
 
 # %% Main
 
@@ -395,7 +444,7 @@ if __name__ == '__main__':
     N = 5
 
     # Q1.1
-    #p1, p2 = Q1_1_get_points(im1, im2, N, im1_title, im2_title, plot_images=True, get_from_user=False)
+    #p1, p2 = Q1_1_get_points(im1, im2, N, im1_title, im2_title, plot_images=True, get_from_user=True)
 
     # Q1.2
     #H, out_size, corners = Q1_2_compute_H(im1, im2, im1_title, im2_title, p1, p2, plot_estimated_transform=True)
@@ -410,14 +459,10 @@ if __name__ == '__main__':
     #Q1_5_SIFT_matching(im1, im2, N, im1_title, im2_title, plot_matches=True)
 
     # Q1.6
-    imgs = []
-    num_of_imgs_to_read = 5
-    for i in range(num_of_imgs_to_read):
-        img = cv2.cvtColor(cv2.imread('data/beach' + str(i+1) + '.jpg'), cv2.COLOR_BGR2RGB)
-        scale_percent = 40  # percent of original size
-        width = int(img.shape[1] * scale_percent / 100)
-        height = int(img.shape[0] * scale_percent / 100)
-        dim = (width, height)
-        scaled_img = cv2.resize(img, dim)
-        imgs.append(scaled_img)
-    Q1_6_compare_manual_vs_SIFT_panorma_stitch(imgs,"beach panorama, SIFT matching")
+    beach_imgs = readAndScaleImageList(path='data/beach', num_of_images_to_read=5, downscale_percent=50)
+    beach_panorama_img = Q1_6_compare_manual_vs_SIFT_panorma_stitch(beach_imgs,"beach panorama, SIFT matching",manual=False)
+    cv2.imwrite('my_data/beach_panorama_SIFT.jpg', cv2.cvtColor(beach_panorama_img, cv2.COLOR_RGB2BGR))
+
+    sintra_imgs = readAndScaleImageList(path='data/sintra', num_of_images_to_read=5, downscale_percent=50)
+    sintra_panorama_img = Q1_6_compare_manual_vs_SIFT_panorma_stitch(sintra_imgs,"sintra panorama, SIFT matching",manual=False)
+    cv2.imwrite('my_data/sintra_panorama_SIFT.jpg', cv2.cvtColor(sintra_panorama_img, cv2.COLOR_RGB2BGR))

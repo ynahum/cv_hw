@@ -8,6 +8,7 @@ import scipy
 from scipy.interpolate import interp2d
 from skimage import color
 
+
 # %% Functions
 
 # Our functions
@@ -192,7 +193,7 @@ def stitchImageList(imgs, manual_point_selection=False, ransac_computeH=False, N
             else:
                 # when increasing N, we got many outliers that ruined the homography completely.
                 # also tried to knn match but it didn't work well even though we played with ratio test
-                p1, p2 = getPoints_SIFT(img_to_warp, img_to_warp_against, N=N, plot_matches=True)
+                p1, p2, kp1, kp2, matches = getPoints_SIFT(img_to_warp, img_to_warp_against, N=N, plot_matches=False)
 
             if ransac_computeH:
                 # based on RANSAC4Dummies pdf (Tel Aviv university CS) we
@@ -200,10 +201,14 @@ def stitchImageList(imgs, manual_point_selection=False, ransac_computeH=False, N
                 epsilon_probablity_error = 0.001  # alarm rate
                 q = 0.05 # our estimate for no outliers from some experiments in SIFT
                 nIter = int(np.log(epsilon_probablity_error) / np.log(1 - q))
-                print(f"RANSAC number of iterations {nIter}")
+                #print(f"RANSAC number of iterations {nIter}")
                 tol = 2
-                H = ransacH(p1,p2,nIter,tol)
-                print(f"done RANSAC")
+                H , best_inlier_idxs = ransacH(p1,p2,nIter,tol)
+                #best_inlier_idxs_reshaped = np.reshape(best_inlier_idxs, -1)
+                #ransac_matches = np.array(matches)[best_inlier_idxs_reshaped]
+                #img3 = cv2.drawMatches(img_to_warp, kp1, img_to_warp_against, kp2, ransac_matches, None, flags=2)
+                #plotImage(img3, 'RANSAC SIFT matches')
+                #print(f"done RANSAC")
             else:
                 H = computeH(p1, p2)
             H_against_anchor = H @ list_of_H[base_to_warp_img_idx]
@@ -219,13 +224,15 @@ def stitchImageList(imgs, manual_point_selection=False, ransac_computeH=False, N
                 print(f"out_size: {repr(out_size)}")
                 print(f"warpped_corners: {repr(warpped_corners)}")
 
-            warpped_img = warpH(img_to_warp, H_shifted, out_size)
+            bypass_warp = False
+            if not bypass_warp:
+                warpped_img = warpH(img_to_warp, H_shifted, out_size)
 
-            big_warpped_img, next_panorama_img, next_panorama_corners = \
-                resizePanorama(curr_panorama_img, curr_panorama_corners, warpped_img, warpped_corners)
+                big_warpped_img, next_panorama_img, next_panorama_corners = \
+                    resizePanorama(curr_panorama_img, curr_panorama_corners, warpped_img, warpped_corners)
 
-            curr_panorama_img = imageStitching(next_panorama_img, big_warpped_img)
-            curr_panorama_corners = next_panorama_corners
+                curr_panorama_img = imageStitching(next_panorama_img, big_warpped_img)
+                curr_panorama_corners = next_panorama_corners
 
             print(f"end warp {warp_img_idx}")
             warp_img_idx += increment_size
@@ -283,6 +290,11 @@ def Q1_5_SIFT_matching(warp_im1, im2, N, warp_im1_title, im2_title, plot_matches
     Q1_4_stitch(im2, warp_im1_linear, corners)
 
 def Q1_6_compare_manual_vs_SIFT_panorma_stitch(imgs, title, manual=False, ransac=False, N=4):
+    panorama_img = stitchImageList(imgs, manual_point_selection=manual, ransac_computeH=ransac, N=N)
+    plotImage(panorama_img, f"{title}")
+    return panorama_img
+
+def Q1_7_RANSAC_panorma_stitch(imgs, title, manual=False, ransac=True, N=16):
     panorama_img = stitchImageList(imgs, manual_point_selection=manual, ransac_computeH=ransac, N=N)
     plotImage(panorama_img, f"{title}")
     return panorama_img
@@ -383,7 +395,7 @@ def imageStitching(img1, wrap_img2):
 # changed interface according to pdf
 def ransacH(p1, p2, nIter, tol, minimum_needed_samples=4):
     iterations = 0
-    best_err = np.inf
+    max_score = 0
     num_of_given_matches = p1.shape[1]
 
     while iterations < nIter:
@@ -401,25 +413,21 @@ def ransacH(p1, p2, nIter, tol, minimum_needed_samples=4):
         ransac_debug = False
         if ransac_debug:
             print(f"iteration {iterations}:len(alsoinliers) = {len(also_idxs)}")
-        # there is an option to threshold on the minimum amount of inliers to account for
-        #if len(also_idxs > d):
 
         # sample connection
         p1_better_data = np.concatenate((p1_maybe_inliers, p1_also_inliers),axis=1)
         p2_better_data = np.concatenate((p2_maybe_inliers, p2_also_inliers),axis=1)
         H = computeH(p1_better_data, p2_better_data)  # fitted model
         p2_better_est, _ = evaluateHmatrix(p1_better_data,p2_better_data,H)
-        test_error_total = ((p2_better_est - p2_better_data) ** 2).sum(0)
-        test_error = np.mean(test_error_total)  # Average error as a new error
-        if test_error < best_err:
-            best_err = test_error
+        total_inliers_indices = np.where(((p2_better_est - p2_better_data) ** 2).sum(0) < tol)
+        curr_score = len(total_inliers_indices[0])/num_of_given_matches
+        if curr_score > max_score:
             best_inlier_idxs = np.concatenate([maybe_idxs, also_idxs])  # Update the in-office points and add new points
-
         iterations += 1
     p1_best_inliers = p1[:, best_inlier_idxs]
     p2_best_inliers = p2[:, best_inlier_idxs]
     bestH = computeH(p1_best_inliers, p2_best_inliers)
-    return bestH
+    return bestH, best_inlier_idxs
 
 
 
@@ -490,7 +498,7 @@ def getPoints_SIFT(im1, im2, N=4, plot_matches=False, knn_matcher=False, apply_r
             img3 = cv2.drawMatches(im1, kp1, im2, kp2, matches[:good_size_to_take], None, flags=2)
             plotImage(img3, 'SIFT matches')
 
-    return p1, p2
+    return p1, p2, kp1, kp2, matches[:good_size_to_take]
 
 # %% Main
 
@@ -545,12 +553,12 @@ if __name__ == '__main__':
     run_Q1_7 = True
     # when using RANSAC, we allow more matches to be part of the possible candidates for building the homography
     # as the RANSAC will filter the outliers
-    N=16
+    N=20
     if run_all or run_Q1_7:
         beach_imgs = readAndScaleImageList(path='data/beach', num_of_images_to_read=5, downscale_percent=50)
-        beach_panorama_img = Q1_6_compare_manual_vs_SIFT_panorma_stitch(beach_imgs,"beach panorama, SIFT matching",manual=False, ransac=True,N=N)
+        beach_panorama_img = Q1_7_RANSAC_panorma_stitch(beach_imgs,"beach panorama, SIFT matching",manual=False, ransac=True,N=N)
         cv2.imwrite('my_data/beach_panorama_SIFT_RANSAC.jpg', cv2.cvtColor(beach_panorama_img, cv2.COLOR_RGB2BGR))
 
-        #sintra_imgs = readAndScaleImageList(path='data/sintra', num_of_images_to_read=5, downscale_percent=50)
-        #sintra_panorama_img = Q1_6_compare_manual_vs_SIFT_panorma_stitch(sintra_imgs,"sintra panorama, SIFT matching",manual=False, ransac=True,N=N)
-        #cv2.imwrite('my_data/sintra_panorama_SIFT_RANSAC.jpg', cv2.cvtColor(sintra_panorama_img, cv2.COLOR_RGB2BGR))
+        sintra_imgs = readAndScaleImageList(path='data/sintra', num_of_images_to_read=5, downscale_percent=50)
+        sintra_panorama_img = Q1_7_RANSAC_panorma_stitch(sintra_imgs,"sintra panorama, SIFT matching",manual=False, ransac=True,N=N)
+        cv2.imwrite('my_data/sintra_panorama_SIFT_RANSAC.jpg', cv2.cvtColor(sintra_panorama_img, cv2.COLOR_RGB2BGR))

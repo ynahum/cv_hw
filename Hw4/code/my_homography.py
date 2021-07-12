@@ -277,6 +277,7 @@ def Q1_2_compute_H(im1, im2, im1_title, im2_title, p1, p2, plot_estimated_transf
 def Q1_3_warp(im1, H, out_size, plot_warp=True, run_both_interp_methods=False):
     warp_im1_linear = warpH(im1, H, out_size)
     warp_im1_linear_title = 'Linear interpolation'
+    warp_im1_cubic = None
     if run_both_interp_methods:
         warp_im1_cubic = warpH(im1, H, out_size,kind='cubic')
         if plot_warp:
@@ -284,7 +285,7 @@ def Q1_3_warp(im1, H, out_size, plot_warp=True, run_both_interp_methods=False):
     else:
         if plot_warp:
             plotImage(warp_im1_linear, warp_im1_linear_title)
-    return warp_im1_linear
+    return warp_im1_linear, warp_im1_cubic
 
 
 def Q1_4_stitch(img2, warped_img1, corners, plot_stitch=True):
@@ -292,13 +293,13 @@ def Q1_4_stitch(img2, warped_img1, corners, plot_stitch=True):
     panoImg = imageStitching(im1_full, warp_im2_full)
     if plot_stitch:
         plotImage(panoImg,'Image  stitching')
-    return im1_full, warp_im2_full
+    return panoImg, im1_full, warp_im2_full
 
 def Q1_5_SIFT_matching(warp_im1, im2, N, warp_im1_title, im2_title, plot_matches=True):
     p1, p2 = getPoints_SIFT(warp_im1,im2,N,plot_matches=plot_matches,knn_matcher=True)
     H, out_size, corners = Q1_2_compute_H(warp_im1, im2, warp_im1_title, im2_title, p1, p2, plot_estimated_transform=True)
-    warp_im1_linear = Q1_3_warp(warp_im1, H, out_size, plot_warp=True, run_both_interp_methods=False)
-    Q1_4_stitch(im2, warp_im1_linear, corners)
+    warp_im1_linear, _ = Q1_3_warp(warp_im1, H, out_size, plot_warp=True, run_both_interp_methods=False)
+    return Q1_4_stitch(im2, warp_im1_linear, corners)
 
 def Q1_6_compare_manual_vs_SIFT_panorma_stitch(imgs, title, manual=False, ransac=False, N=4):
     panorama_img = stitchImageList(imgs, manual_point_selection=manual, ransac_computeH=ransac, N=N)
@@ -529,7 +530,7 @@ if __name__ == '__main__':
     im2_title = 'incline_R'
     N = 5
 
-    run_all = True
+    run_all = False
 
     # Q1.1
     run_Q1_1 = False
@@ -547,19 +548,24 @@ if __name__ == '__main__':
     run_Q1_3 = False
     if run_all or run_Q1_3:
         print("Q1.3")
-        warp_im1_linear = Q1_3_warp(im1, H, out_size, plot_warp=True, run_both_interp_methods=False)
+        warp_im1_linear, warp_im1_bicubic = Q1_3_warp(im1, H, out_size, plot_warp=True, run_both_interp_methods=False)
+        cv2.imwrite('my_data/warpped_image_linear_method.jpg', cv2.cvtColor(warp_im1_linear, cv2.COLOR_RGB2BGR))
+        if warp_im1_bicubic != None:
+            cv2.imwrite('my_data/warpped_image_bicubic_method.jpg', cv2.cvtColor(warp_im1_bicubic, cv2.COLOR_RGB2BGR))
 
     # Q1.4
     run_Q1_4 = False
     if run_all or run_Q1_4:
         print("Q1.4")
-        im1_full, warp_im2_full = Q1_4_stitch(im2, warp_im1_linear, corners)
+        pano_img, im1_full, warp_im2_full = Q1_4_stitch(im2, warp_im1_linear, corners)
+        cv2.imwrite('my_data/incline_panorama.jpg', cv2.cvtColor(pano_img, cv2.COLOR_RGB2BGR))
 
     # Q1.5
     run_Q1_5 = False
     if run_all or run_Q1_5:
         print("Q1.5")
-        Q1_5_SIFT_matching(im1, im2, N, im1_title, im2_title, plot_matches=True)
+        sift_pano_img, im1_full, warp_im2_full = Q1_5_SIFT_matching(im1, im2, N, im1_title, im2_title, plot_matches=True)
+        cv2.imwrite('my_data/incline_panorama_SIFT.jpg', cv2.cvtColor(sift_pano_img, cv2.COLOR_RGB2BGR))
 
     # Q1.6
     run_Q1_6 = False

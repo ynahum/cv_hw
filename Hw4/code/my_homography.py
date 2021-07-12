@@ -295,9 +295,10 @@ def Q1_6_compare_manual_vs_SIFT_panorma_stitch(imgs, title, manual=False, ransac
     return panorama_img
 
 def Q1_7_RANSAC_panorma_stitch(imgs, title, manual=False, ransac=True, N=16):
-    panorama_img = stitchImageList(imgs, manual_point_selection=manual, ransac_computeH=ransac, N=N)
-    plotImage(panorama_img, f"{title}")
-    return panorama_img
+    return Q1_6_compare_manual_vs_SIFT_panorma_stitch(imgs, title, manual=manual, ransac=ransac, N=N)
+
+def Q1_8_my_panorma_stitch(imgs, title, manual=False, ransac=True, N=16):
+    return Q1_6_compare_manual_vs_SIFT_panorma_stitch(imgs, title, manual=manual, ransac=ransac, N=N)
 
 #---------------------------
 
@@ -392,43 +393,28 @@ def imageStitching(img1, wrap_img2):
     return np.uint8(panoImg)
 
 
-def ransacH(p1, p2, nIter, tol):
-    """
-    This function runs Ransac algorithm as provided in the lecture and returns the best
-    homography matrix with minimum outliers.
-    input:
-        :param p1: list of corresponding points in the first image.
-        :param p2: list of corresponding points in the second image.
-        :param nIter: number of iterations in Ransac algorithm.
-        :param tol: tolerance value - the distance which the points are considered a match in Ransac algorithm.
-    output:
-        :param bestH: the best homography matrix with minimum outliers.
-    """
-    matches_Number = p1.shape[1]
-    minSizeToCalcH = 4  # need 4 couples to calc H linearly
-    usedGroupIndices = []
-    bestScore = 0
+def ransacH(p1, p2, nIter, tol, minimum_needed_samples=4):
+    max_score = 0
+    num_of_given_matches = p1.shape[1]
+
     bestInliersIndices = np.array([])
-    for _ in range(nIter):
-        groupIndices = random.sample(set(np.arange(matches_Number)), minSizeToCalcH)
-        while groupIndices in usedGroupIndices:
-            # if we already used those matches, take others
-            groupIndices = random.sample(set(np.arange(matches_Number)), minSizeToCalcH)
-        usedGroupIndices.append(groupIndices)
+
+    for i in range(nIter):
+        groupIndices = random.sample(set(np.arange(num_of_given_matches)), minimum_needed_samples)
         p1_sample = p1[:, groupIndices]     # sample randomly
         p2_sample = p2[:, groupIndices]     # sample randomly
         currH = computeH(p1_sample, p2_sample)  # calc H
 
         # count inliers:
-        p1_est = currH @ np.concatenate((p2, np.ones((1, matches_Number))), axis=0)
+        p1_est = currH @ np.concatenate((p2, np.ones((1, num_of_given_matches))), axis=0)
         p1_est = (p1_est / p1_est[2, :])[:2, :]     # normalize and take x, y coords.
 
         inliesIndices = np.where(((p1_est - p1)**2).sum(0) < tol)[0]
 
         # calc score and if it's better update parameters
-        currScore = inliesIndices.size/matches_Number
-        if currScore > bestScore:
-            bestScore = currScore
+        currScore = inliesIndices.size/num_of_given_matches
+        if currScore > max_score:
+            max_score = currScore
             # bestH = currH
             bestInliersIndices = inliesIndices
 
@@ -605,3 +591,10 @@ if __name__ == '__main__':
         #sintra_imgs = readAndScaleImageList(path='data/sintra', num_of_images_to_read=5, downscale_percent=50)
         #sintra_panorama_img = Q1_7_RANSAC_panorma_stitch(sintra_imgs,"sintra panorama, SIFT matching",manual=False, ransac=True,N=N)
         #cv2.imwrite('my_data/sintra_panorama_SIFT_RANSAC.jpg', cv2.cvtColor(sintra_panorama_img, cv2.COLOR_RGB2BGR))
+
+    # Q1.8
+    run_Q1_8 = False
+    if run_all or run_Q1_8:
+        my_imgs = readAndScaleImageList(path='my_data/haifa_beach', num_of_images_to_read=5, downscale_percent=50)
+        my_panorama_img = Q1_8_my_panorma_stitch(my_imgs,"beach panorama, SIFT matching",manual=False, ransac=True,N=N)
+        cv2.imwrite('my_data/my_panorama.jpg', cv2.cvtColor(my_panorama_img, cv2.COLOR_RGB2BGR))

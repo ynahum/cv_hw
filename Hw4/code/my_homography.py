@@ -188,12 +188,22 @@ def stitchImageList(imgs, manual_point_selection=False, ransac_computeH=False, N
 
             img_to_warp = imgs[warp_img_idx]
             img_to_warp_against = imgs[base_to_warp_img_idx]
+            plot_ransac_matches = False
             if manual_point_selection:
                 p1, p2 = getPoints(img_to_warp, img_to_warp_against, N=N)
             else:
                 # when increasing N, we got many outliers that ruined the homography completely.
                 # also tried to knn match but it didn't work well even though we played with ratio test
-                p1, p2, kp1, kp2, matches = getPoints_SIFT(img_to_warp, img_to_warp_against, N=N, plot_matches=False)
+                if plot_ransac_matches:
+                    p1, p2, kp1, kp2, matches = getPoints_SIFT(img_to_warp,\
+                       img_to_warp_against,\
+                       N=N, plot_matches=False,\
+                       return_matches=plot_ransac_matches)
+                else:
+                    p1, p2 = getPoints_SIFT(img_to_warp,\
+                        img_to_warp_against,\
+                        N=N, plot_matches=False,\
+                        return_matches=plot_ransac_matches)
 
             if ransac_computeH:
                 # based on RANSAC4Dummies pdf (Tel Aviv university CS) we
@@ -205,9 +215,10 @@ def stitchImageList(imgs, manual_point_selection=False, ransac_computeH=False, N
                 tol = 2
                 H , best_inlier_idxs = ransacH(p1,p2,nIter,tol)
                 best_inlier_idxs_reshaped = np.reshape(best_inlier_idxs, -1)
-                ransac_matches = np.array(matches)[best_inlier_idxs_reshaped]
-                img3 = cv2.drawMatches(img_to_warp, kp1, img_to_warp_against, kp2, ransac_matches, None, flags=2)
-                plotImage(img3, 'RANSAC SIFT matches')
+                if plot_ransac_matches:
+                    ransac_matches = np.array(matches)[best_inlier_idxs_reshaped]
+                    img3 = cv2.drawMatches(img_to_warp, kp1, img_to_warp_against, kp2, ransac_matches, None, flags=2)
+                    plotImage(img3, 'RANSAC SIFT matches')
                 print(f"done RANSAC")
             else:
                 H = computeH(p1, p2)
@@ -255,7 +266,7 @@ def Q1_1_get_points(im1, im2, N, im1_title, im2_title, plot_images=True, get_fro
 
 def Q1_2_compute_H(im1, im2, im1_title, im2_title, p1, p2, plot_estimated_transform=True):
     H2to1 = computeH(p1, p2)
-    p2reconstructed = evaluateHmatrix(p1, p2, H2to1)
+    p2reconstructed, _ = evaluateHmatrix(p1, p2, H2to1)
     if plot_estimated_transform:
         plotEstimatedTransformation(im1, im2, im1_title, im2_title, p1, p2, p2reconstructed)
     H2to1Shifted,out_size,corners = shiftH(im1, H2to1)
@@ -436,7 +447,7 @@ def ransacH(p1, p2, nIter, tol, minimum_needed_samples=4):
     bestH = computeH(p1[:, best_inliers_indices], p2[:, best_inliers_indices])
     return bestH, best_inliers_indices
 
-def getPoints_SIFT(im1, im2, N=4, plot_matches=False, knn_matcher=False, apply_ratio_test=True, ratio_test_multiplier=0.75):
+def getPoints_SIFT(im1, im2, N=4, plot_matches=False, knn_matcher=False, apply_ratio_test=True, ratio_test_multiplier=0.75, return_matches=False):
 
     if knn_matcher:
         # Initiate SIFT detector
@@ -502,8 +513,10 @@ def getPoints_SIFT(im1, im2, N=4, plot_matches=False, knn_matcher=False, apply_r
         if plot_matches:
             img3 = cv2.drawMatches(im1, kp1, im2, kp2, matches[:good_size_to_take], None, flags=2)
             plotImage(img3, 'SIFT matches')
-
-    return p1, p2, kp1, kp2, matches[:good_size_to_take]
+    if return_matches:
+        return p1, p2, kp1, kp2, matches[:good_size_to_take]
+    else:
+        return p1, p2
 
 # %% Main
 
@@ -516,36 +529,42 @@ if __name__ == '__main__':
     im2_title = 'incline_R'
     N = 5
 
-    run_all = False
+    run_all = True
 
     # Q1.1
     run_Q1_1 = False
     if run_all or run_Q1_1:
-        p1, p2 = Q1_1_get_points(im1, im2, N, im1_title, im2_title, plot_images=True, get_from_user=True)
+        print("Q1.1")
+        p1, p2 = Q1_1_get_points(im1, im2, N, im1_title, im2_title, plot_images=True, get_from_user=False)
 
     # Q1.2
     run_Q1_2 = False
     if run_all or run_Q1_2:
+        print("Q1.2")
         H, out_size, corners = Q1_2_compute_H(im1, im2, im1_title, im2_title, p1, p2, plot_estimated_transform=True)
 
     # Q1.3
     run_Q1_3 = False
     if run_all or run_Q1_3:
+        print("Q1.3")
         warp_im1_linear = Q1_3_warp(im1, H, out_size, plot_warp=True, run_both_interp_methods=False)
 
     # Q1.4
     run_Q1_4 = False
     if run_all or run_Q1_4:
+        print("Q1.4")
         im1_full, warp_im2_full = Q1_4_stitch(im2, warp_im1_linear, corners)
 
     # Q1.5
     run_Q1_5 = False
     if run_all or run_Q1_5:
+        print("Q1.5")
         Q1_5_SIFT_matching(im1, im2, N, im1_title, im2_title, plot_matches=True)
 
     # Q1.6
     run_Q1_6 = False
     if run_all or run_Q1_6:
+        print("Q1.6")
         beach_imgs = readAndScaleImageList(path='data/beach', num_of_images_to_read=5, downscale_percent=50)
         beach_panorama_img = Q1_6_compare_manual_vs_SIFT_panorma_stitch(beach_imgs,"beach panorama, SIFT matching",manual=False,N=10)
         cv2.imwrite('my_data/beach_panorama_SIFT.jpg', cv2.cvtColor(beach_panorama_img, cv2.COLOR_RGB2BGR))
@@ -560,6 +579,7 @@ if __name__ == '__main__':
     # as the RANSAC will filter the outliers
     N=25
     if run_all or run_Q1_7:
+        print("Q1.7")
         beach_imgs = readAndScaleImageList(path='data/beach', num_of_images_to_read=5, downscale_percent=50)
         beach_panorama_img = Q1_7_RANSAC_panorma_stitch(beach_imgs,"beach panorama, SIFT + RANSAC matching",manual=False, ransac=True,N=N)
         cv2.imwrite('my_data/beach_panorama_SIFT_RANSAC.jpg', cv2.cvtColor(beach_panorama_img, cv2.COLOR_RGB2BGR))
@@ -571,6 +591,7 @@ if __name__ == '__main__':
     # Q1.8
     run_Q1_8 = False
     if run_all or run_Q1_8:
+        print("Q1.8")
         my_imgs = readAndScaleImageList(path='my_data/haifa_beach', num_of_images_to_read=3, downscale_percent=50)
         my_panorama_img = Q1_8_my_panorma_stitch(my_imgs,"beach panorama, SIFT + RANSAC matching",manual=False, ransac=True,N=N)
         cv2.imwrite('my_data/my_panorama.jpg', cv2.cvtColor(my_panorama_img, cv2.COLOR_RGB2BGR))

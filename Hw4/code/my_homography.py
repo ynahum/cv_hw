@@ -7,7 +7,7 @@ import cv2
 import scipy
 from scipy.interpolate import interp2d
 from skimage import color
-
+import random
 
 # %% Functions
 
@@ -204,11 +204,11 @@ def stitchImageList(imgs, manual_point_selection=False, ransac_computeH=False, N
                 #print(f"RANSAC number of iterations {nIter}")
                 tol = 2
                 H , best_inlier_idxs = ransacH(p1,p2,nIter,tol)
-                #best_inlier_idxs_reshaped = np.reshape(best_inlier_idxs, -1)
-                #ransac_matches = np.array(matches)[best_inlier_idxs_reshaped]
-                #img3 = cv2.drawMatches(img_to_warp, kp1, img_to_warp_against, kp2, ransac_matches, None, flags=2)
-                #plotImage(img3, 'RANSAC SIFT matches')
-                #print(f"done RANSAC")
+                best_inlier_idxs_reshaped = np.reshape(best_inlier_idxs, -1)
+                ransac_matches = np.array(matches)[best_inlier_idxs_reshaped]
+                img3 = cv2.drawMatches(img_to_warp, kp1, img_to_warp_against, kp2, ransac_matches, None, flags=2)
+                plotImage(img3, 'RANSAC SIFT matches')
+                print(f"done RANSAC")
             else:
                 H = computeH(p1, p2)
             H_against_anchor = H @ list_of_H[base_to_warp_img_idx]
@@ -392,6 +392,50 @@ def imageStitching(img1, wrap_img2):
     return np.uint8(panoImg)
 
 
+def ransacH(p1, p2, nIter, tol):
+    """
+    This function runs Ransac algorithm as provided in the lecture and returns the best
+    homography matrix with minimum outliers.
+    input:
+        :param p1: list of corresponding points in the first image.
+        :param p2: list of corresponding points in the second image.
+        :param nIter: number of iterations in Ransac algorithm.
+        :param tol: tolerance value - the distance which the points are considered a match in Ransac algorithm.
+    output:
+        :param bestH: the best homography matrix with minimum outliers.
+    """
+    matches_Number = p1.shape[1]
+    minSizeToCalcH = 4  # need 4 couples to calc H linearly
+    usedGroupIndices = []
+    bestScore = 0
+    bestInliersIndices = np.array([])
+    for _ in range(nIter):
+        groupIndices = random.sample(set(np.arange(matches_Number)), minSizeToCalcH)
+        while groupIndices in usedGroupIndices:
+            # if we already used those matches, take others
+            groupIndices = random.sample(set(np.arange(matches_Number)), minSizeToCalcH)
+        usedGroupIndices.append(groupIndices)
+        p1_sample = p1[:, groupIndices]     # sample randomly
+        p2_sample = p2[:, groupIndices]     # sample randomly
+        currH = computeH(p1_sample, p2_sample)  # calc H
+
+        # count inliers:
+        p1_est = currH @ np.concatenate((p2, np.ones((1, matches_Number))), axis=0)
+        p1_est = (p1_est / p1_est[2, :])[:2, :]     # normalize and take x, y coords.
+
+        inliesIndices = np.where(((p1_est - p1)**2).sum(0) < tol)[0]
+
+        # calc score and if it's better update parameters
+        currScore = inliesIndices.size/matches_Number
+        if currScore > bestScore:
+            bestScore = currScore
+            # bestH = currH
+            bestInliersIndices = inliesIndices
+
+    bestH = computeH(p1[:, bestInliersIndices], p2[:, bestInliersIndices])
+    return bestH, bestInliersIndices
+
+'''
 # changed interface according to pdf
 def ransacH(p1, p2, nIter, tol, minimum_needed_samples=4):
     iterations = 0
@@ -402,32 +446,31 @@ def ransacH(p1, p2, nIter, tol, minimum_needed_samples=4):
         maybe_idxs, test_idxs = randomPartition(minimum_needed_samples, num_of_given_matches)
         p1_maybe_inliers = p1[:,maybe_idxs]
         p2_maybe_inliers = p2[:,maybe_idxs]
-        p1_test_points = p1[:,test_idxs]
-        p2_test_points = p2[:,test_idxs]
         H = computeH(p1_maybe_inliers, p2_maybe_inliers)  # fitted model
-        p2_test_points_est, test_error = evaluateHmatrix(p1_test_points,p2_test_points,H)
-        also_idxs = test_idxs[((p2_test_points_est-p2_test_points)**2).sum(0) < tol]
-        p1_also_inliers = p1[:, also_idxs]
-        p2_also_inliers = p2[:, also_idxs]
-
-        ransac_debug = False
-        if ransac_debug:
-            print(f"iteration {iterations}:len(alsoinliers) = {len(also_idxs)}")
-
+        p2_points_est, _ = evaluateHmatrix(p1,p2,H)
+        total_inliers_indices = np.where(((p2_points_est - p2) ** 2).sum(0) < tol)
+        #p1_test_points = p1[:,test_idxs]
+        #p2_test_points = p2[:,test_idxs]
+        #p2_test_points_est, test_error = evaluateHmatrix(p1_test_points,p2_test_points,H)
+        #also_idxs = test_idxs[((p2_test_points_est-p2_test_points)**2).sum(0) < tol]
+        #p1_also_inliers = p1[:, also_idxs]
+        #p2_also_inliers = p2[:, also_idxs]
         # sample connection
-        p1_better_data = np.concatenate((p1_maybe_inliers, p1_also_inliers),axis=1)
-        p2_better_data = np.concatenate((p2_maybe_inliers, p2_also_inliers),axis=1)
-        H = computeH(p1_better_data, p2_better_data)  # fitted model
-        p2_better_est, _ = evaluateHmatrix(p1_better_data,p2_better_data,H)
-        total_inliers_indices = np.where(((p2_better_est - p2_better_data) ** 2).sum(0) < tol)
+        #p1_better_data = np.concatenate((p1_maybe_inliers, p1_also_inliers),axis=1)
+        #p2_better_data = np.concatenate((p2_maybe_inliers, p2_also_inliers),axis=1)
+        #H = computeH(p1_better_data, p2_better_data)  # fitted model
+        #p2_better_est, _ = evaluateHmatrix(p1_better_data,p2_better_data,H)
+        #total_inliers_indices = np.where(((p2_better_est - p2_better_data) ** 2).sum(0) < tol)
+
         curr_score = len(total_inliers_indices[0])/num_of_given_matches
         if curr_score > max_score:
-            best_inlier_idxs = np.concatenate([maybe_idxs, also_idxs])  # Update the in-office points and add new points
+            best_inlier_idxs = total_inliers_indices  # Update the in-office points and add new points
         iterations += 1
-    p1_best_inliers = p1[:, best_inlier_idxs]
-    p2_best_inliers = p2[:, best_inlier_idxs]
+    p1_best_inliers = p1[:, np.reshape(best_inlier_idxs,-1)]
+    p2_best_inliers = p2[:, np.reshape(best_inlier_idxs,-1)]
     bestH = computeH(p1_best_inliers, p2_best_inliers)
     return bestH, best_inlier_idxs
+'''
 
 
 
@@ -553,12 +596,12 @@ if __name__ == '__main__':
     run_Q1_7 = True
     # when using RANSAC, we allow more matches to be part of the possible candidates for building the homography
     # as the RANSAC will filter the outliers
-    N=20
+    N=25
     if run_all or run_Q1_7:
         beach_imgs = readAndScaleImageList(path='data/beach', num_of_images_to_read=5, downscale_percent=50)
         beach_panorama_img = Q1_7_RANSAC_panorma_stitch(beach_imgs,"beach panorama, SIFT matching",manual=False, ransac=True,N=N)
         cv2.imwrite('my_data/beach_panorama_SIFT_RANSAC.jpg', cv2.cvtColor(beach_panorama_img, cv2.COLOR_RGB2BGR))
 
-        sintra_imgs = readAndScaleImageList(path='data/sintra', num_of_images_to_read=5, downscale_percent=50)
-        sintra_panorama_img = Q1_7_RANSAC_panorma_stitch(sintra_imgs,"sintra panorama, SIFT matching",manual=False, ransac=True,N=N)
-        cv2.imwrite('my_data/sintra_panorama_SIFT_RANSAC.jpg', cv2.cvtColor(sintra_panorama_img, cv2.COLOR_RGB2BGR))
+        #sintra_imgs = readAndScaleImageList(path='data/sintra', num_of_images_to_read=5, downscale_percent=50)
+        #sintra_panorama_img = Q1_7_RANSAC_panorma_stitch(sintra_imgs,"sintra panorama, SIFT matching",manual=False, ransac=True,N=N)
+        #cv2.imwrite('my_data/sintra_panorama_SIFT_RANSAC.jpg', cv2.cvtColor(sintra_panorama_img, cv2.COLOR_RGB2BGR))

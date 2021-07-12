@@ -561,16 +561,16 @@ if __name__ == '__main__':
     N=25
     if run_all or run_Q1_7:
         beach_imgs = readAndScaleImageList(path='data/beach', num_of_images_to_read=5, downscale_percent=50)
-        beach_panorama_img = Q1_7_RANSAC_panorma_stitch(beach_imgs,"beach panorama, RANSAC SIFT matching",manual=False, ransac=True,N=N)
+        beach_panorama_img = Q1_7_RANSAC_panorma_stitch(beach_imgs,"beach panorama, SIFT + RANSAC matching",manual=False, ransac=True,N=N)
         cv2.imwrite('my_data/beach_panorama_SIFT_RANSAC.jpg', cv2.cvtColor(beach_panorama_img, cv2.COLOR_RGB2BGR))
 
         sintra_imgs = readAndScaleImageList(path='data/sintra', num_of_images_to_read=5, downscale_percent=50)
-        sintra_panorama_img = Q1_7_RANSAC_panorma_stitch(sintra_imgs,"sintra panorama, RANSAC SIFT matching",manual=False, ransac=True,N=N)
+        sintra_panorama_img = Q1_7_RANSAC_panorma_stitch(sintra_imgs,"sintra panorama, SIFT + RANSAC matching",manual=False, ransac=True,N=N)
         cv2.imwrite('my_data/sintra_panorama_SIFT_RANSAC.jpg', cv2.cvtColor(sintra_panorama_img, cv2.COLOR_RGB2BGR))
 
     # Q1.8
-    run_Q1_8 = True
+    run_Q1_8 = False
     if run_all or run_Q1_8:
-        my_imgs = readAndScaleImageList(path='my_data/haifa_beach', num_of_images_to_read=5, downscale_percent=50)
-        my_panorama_img = Q1_8_my_panorma_stitch(my_imgs,"beach panorama, SIFT matching",manual=False, ransac=True,N=N)
+        my_imgs = readAndScaleImageList(path='my_data/haifa_beach', num_of_images_to_read=3, downscale_percent=50)
+        my_panorama_img = Q1_8_my_panorma_stitch(my_imgs,"beach panorama, SIFT + RANSAC matching",manual=False, ransac=True,N=N)
         cv2.imwrite('my_data/my_panorama.jpg', cv2.cvtColor(my_panorama_img, cv2.COLOR_RGB2BGR))

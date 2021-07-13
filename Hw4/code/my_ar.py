@@ -144,5 +144,5 @@ if __name__ == '__main__':
             fg_img = cv2.cvtColor(cv2.imread(f"my_data/fg{str(i+1)}.jpg"), cv2.COLOR_BGR2RGB)
             out_img = im2im(ref_img, bg_img, fg_img, N=25, plot_sift_pre_ransac=False,
                             plot_post_ransac=False, plot_and_save_inter_imgs=False)
-            cv2.imwrite(f"my_data/im2im{str(i+1)}.jpg", cv2.cvtColor(out_img, cv2.COLOR_RGB2BGR))
+            cv2.imwrite(f"../output/im2im{str(i+1)}.jpg", cv2.cvtColor(out_img, cv2.COLOR_RGB2BGR))
             mh.plotImage(out_img,f"im2im {i+1}")

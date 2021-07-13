@@ -7,7 +7,6 @@ import cv2
 import scipy
 from scipy.interpolate import interp2d
 from skimage import color
-import random
 
 # %% Functions
 
